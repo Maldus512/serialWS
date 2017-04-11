@@ -18,6 +18,8 @@ using System.Collections.Generic;
 using PacketManagement;
 using System.Text.RegularExpressions;
 using SerialWS.Exceptions;
+using Windows.UI.Xaml.Media;
+using Windows.UI.Text;
 
 namespace SerialWS
 {
@@ -25,6 +27,7 @@ namespace SerialWS
     public class HostViewModel : INotifyPropertyChanged
     {
         private string selectedFileName;
+        private string status;
         private ObservableCollection<Command> listOfCommands;
 
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
@@ -32,6 +35,7 @@ namespace SerialWS
         public HostViewModel()
         {
             this.selectedFileName = "Please open a file";
+            this.status = "Select a device and connect";
         }
 
         public ObservableCollection<Command> ListOfCommands {
@@ -52,6 +56,15 @@ namespace SerialWS
             }
         }
 
+        public string StatusString {
+            get { return this.status; }
+            set {
+                this.status = value;
+                this.OnPropertyChanged("StatusString");
+            }
+        }
+
+
         public void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             // Raise the PropertyChanged event, passing the name of the property whose value has changed.
@@ -60,7 +73,7 @@ namespace SerialWS
     }
 
 
-    public sealed partial class MainPage : Page
+    public sealed partial class MainPage : Page, IAckCallback
     {
         /// <summary>
         /// Private variables
@@ -83,20 +96,43 @@ namespace SerialWS
         private byte[] readBuffer;
 
         private StorageFile SelectedFile;
+        private ulong readingIndex;
 
-        Windows.Storage.ApplicationDataContainer localSettings;
+        ApplicationDataContainer localSettings;
+
+        private byte[] lastReceivedBytes;
 
         public MainPage()
         {
             pMan = new PacketManager(new Dictionary<ushort, string>());
             this.InitializeComponent();
             this.DataContext = this;
+            pMan.callback = this;
 
             comPortInput.IsEnabled = false;
 
             restoreSettings();
 
             ListAvailablePorts();
+        }
+
+        public void OnAck() {
+            if (SelectedFile != null) {
+                SendFileSection(); 
+            }
+        }
+
+        public void OnNack(string msg) {
+            if (SelectedFile != null) {
+                readingIndex = 0;
+                SelectedFile = null;
+                status.Text = "Expected Ack, received " + msg;
+            }
+           if (dataWriteObject != null)
+            {
+                dataWriteObject.DetachStream();
+                dataWriteObject = null;
+            }
         }
 
 
@@ -215,7 +251,7 @@ namespace SerialWS
                 ReadCancellationTokenSource = new CancellationTokenSource();
 
                 // Enable 'WRITE' button to allow sending data
-
+                ConnectDeviceFlyout.Hide();
                 baudCombox.IsEnabled = false;
                 Listen();
             }
@@ -236,19 +272,17 @@ namespace SerialWS
             Task<UInt32> storeAsyncTask;
             byte a, b;
             byte[] c = new byte[2];
-            ushort tmp;
-            tmp = ((Command)commandCombox.SelectedItem).Code;
-            c[1] = (byte)tmp;
-            c[0] = (byte)(tmp >> 8);
 
             try
             {
                 b = (byte)int.Parse(senderAdd.Text, System.Globalization.NumberStyles.HexNumber);
                 a = (byte)int.Parse(receiverAdd.Text, System.Globalization.NumberStyles.HexNumber);
+                c[0] = (byte)int.Parse(CommandCode.Text, System.Globalization.NumberStyles.HexNumber);
+                c[1] = (byte)int.Parse(SubCommandCode.Text, System.Globalization.NumberStyles.HexNumber);
             }
             catch (FormatException)
             {
-                status.Text = "Wrong sender/receiver address";
+                status.Text = "Wrong sender/receiver address or command code";
                 return;
             }
             List<byte[]> toSend = Utils.formPackets(text, b, a, c);
@@ -268,7 +302,7 @@ namespace SerialWS
                     //status.Text = sendText.Text + ", ";
                     status.Text = bytesWritten + " bytes written successfully!";
                 }
-                sendText.Text = "";
+                //sendText.Text = "";
             }
         }
 
@@ -280,17 +314,14 @@ namespace SerialWS
         /// <param name="e"></param>
         private async void Listen()
         {
-            try
-            {
-                if (serialPort != null)
-                {
+            try {
+                if (serialPort != null) {
                     dataReaderObject = new DataReader(serialPort.InputStream);
 
                     readBuffer = new byte[4096];
 
                     // keep reading the serial input
-                    while (true)
-                    {
+                    while (true) {
                         await ReadAsync(ReadCancellationTokenSource.Token);
                     }
                 }
@@ -326,7 +357,6 @@ namespace SerialWS
         private async Task ReadAsync(CancellationToken cancellationToken)
         {
             Task<UInt32> loadAsyncTask;
-            byte[] text;
             uint ReadBufferLength = 4096;
 
             // If task cancellation was requested, comply
@@ -342,13 +372,19 @@ namespace SerialWS
             UInt32 bytesRead = await loadAsyncTask;
             if (bytesRead > 0)
             {
-                text = new byte[bytesRead];
-                dataReaderObject.ReadBytes(text);
-                rcvdText.Text = BitConverter.ToString(text);
+                lastReceivedBytes = new byte[bytesRead];
+                dataReaderObject.ReadBytes(lastReceivedBytes);
+                string res;
+                //if (encodingCombox.SelectedIndex == 0){
+                    res = BitConverter.ToString(lastReceivedBytes);
+                /*} else {
+                    res = System.Text.Encoding.ASCII.GetString(lastReceivedBytes);
+                }*/
+                rcvdText.Text = res;
                 status.Text = bytesRead + " bytes read successfully!";
 
                 //packet = pMan.validatePacket(text);
-                pMan.evalNewData(text);
+                pMan.evalNewData(lastReceivedBytes);
             }
         }
 
@@ -426,36 +462,21 @@ namespace SerialWS
             if (file != null)
             {
                 // Application now has read/write access to the picked file
-                SelectedFile = file;
                 status.Text = "Selected " + file.Name;
                 ViewModel.SelectedFileName = "Loaded " + file.Name;
 
                 byte[] text = await Utils.ReadFile(file);
-                sendText.Text = BitConverter.ToString(text);
+                string res;
+                res = BitConverter.ToString(text);
+                sendText.Text = res;
             }
         }
 
-        private async void tempsavecomm() {
-             var savePicker = new FileSavePicker();
-            savePicker.SuggestedStartLocation = PickerLocationId.Desktop;
-            savePicker.FileTypeChoices.Add("text", new List<string>() { ".txt" });
-            savePicker.SuggestedFileName = "config";
-
-            StorageFile file = await savePicker.PickSaveFileAsync();
-            if (file != null)
-            {
-                CachedFileManager.DeferUpdates(file);
-                await FileIO.WriteTextAsync(file, pMan.CommandsToCSV());
-                Windows.Storage.Provider.FileUpdateStatus res =
-                    await CachedFileManager.CompleteUpdatesAsync(file);
-            }
-
-        }
 
         private async void savePacketButton_Click(object sender, RoutedEventArgs e)
         {
             var savePicker = new FileSavePicker();
-            var packet = (Packet) receivedPacketsView.SelectedItem;
+            var packets = receivedPacketsView.SelectedItems;
             savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
             // Dropdown of file types the user can save the file as
             savePicker.FileTypeChoices.Add("Binary file", new List<string>() { ".bin" });
@@ -468,8 +489,21 @@ namespace SerialWS
                 // Prevent updates to the remote version of the file until
                 // we finish making changes and call CompleteUpdatesAsync.
                 CachedFileManager.DeferUpdates(file);
+                var stream = await file.OpenAsync(FileAccessMode.ReadWrite);
                 // write to file
-                await FileIO.WriteBytesAsync(file, packet.payload);
+                using (var outputStream = stream.GetOutputStreamAt(0)) {
+                    using (var dataWriter = new DataWriter(outputStream)) {
+                        foreach (Packet packet in packets) {
+                            int padding = Constants.PAYLOADLEN - packet.payload.Length;
+                            byte[] nullPadding = new byte[padding];
+                            dataWriter.WriteBytes(packet.payload);
+                            dataWriter.WriteBytes(nullPadding);
+                        }
+                        await dataWriter.StoreAsync();
+                        await outputStream.FlushAsync();
+                    }
+                }
+                stream.Dispose();
                 // Let Windows know that we're finished changing the file so
                 // the other app can update the remote version of the file.
                 // Completing updates may require Windows to ask for user input.
@@ -490,6 +524,19 @@ namespace SerialWS
             }
         }
 
+        private void selectAllButton_Click(object sender, RoutedEventArgs e) {
+            bool b = receivedPacketsView.SelectedItems.Count > 0;
+            if (b) {
+                receivedPacketsView.SelectionMode = ListViewSelectionMode.None;
+                receivedPacketsView.SelectionMode = ListViewSelectionMode.Multiple;
+            }
+            else {
+                receivedPacketsView.SelectionMode = ListViewSelectionMode.Multiple;
+                receivedPacketsView.SelectAll();
+            }
+
+        }
+
         private void receivedPacketsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (receivedPacketsView.SelectedItem != null)
@@ -500,14 +547,18 @@ namespace SerialWS
 
         private async void writeTextButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (serialPort != null)
-                {
+            try {
+                if (serialPort != null) {
                     // Create the DataWriter object and attach to OutputStream
                     dataWriteObject = new DataWriter(serialPort.OutputStream);
                     string text = sendText.Text;
+                    int repeat = 1;
                     text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
+                    /*try {
+                        repeat = int.Parse(numPacketsToSend.Text);
+                    } catch (Exception ex1) {
+                        repeat = 1;
+                    }*/
 
                     //Launch the WriteAsync task to perform the write
                     if (text.Length % 2 != 0) {
@@ -515,7 +566,9 @@ namespace SerialWS
                         return;
                     }
                     byte[] payload = Utils.StringToByteArray(text);
-                    await WriteAsync(payload);
+                    
+                    for (int i = 0; i < repeat; i++) 
+                        await WriteAsync(payload);
                 }
                 else
                 {
@@ -551,6 +604,9 @@ namespace SerialWS
                 return;
             composite[Constants.COMMANDCHOICEKEY] = commandCombox.SelectedIndex;
             localSettings.Values[Constants.SETTINGSKEY] = composite;
+
+            commandCombox.Opacity = 1.0;
+            commandCombox.FontWeight = FontWeights.SemiBold;
         }
 
         private void sendrcv_TextChanged(object sender, TextChangedEventArgs e) {
@@ -586,6 +642,37 @@ namespace SerialWS
             }
         }
 
+
+        private void HexValidation(object s, TextChangedEventArgs args) {
+            TextBox sender = (TextBox)s;
+            Command comm = (Command)commandCombox.SelectedItem;
+            if (!Regex.IsMatch(sender.Text, @"\A\b[0-9a-fA-F]+\b\Z") || sender.Text.Length > 2) {
+                int pos = sender.SelectionStart - 1;
+                if (pos < 0)
+                    return;
+                sender.Text = sender.Text.Remove(pos, 1);
+                sender.SelectionStart = pos;
+                //commandCombox.SelectedIndex = -1;
+            }
+
+            if (CommandCode.Text.Length == 2 && SubCommandCode.Text.Length == 2) {
+                foreach (Command c in ViewModel.ListOfCommands) {
+                    if (c.MainCode == CommandCode.Text && c.SubCode == SubCommandCode.Text) {
+                        commandCombox.SelectedItem = c;
+                        commandCombox.Opacity = 1.0;
+                        commandCombox.FontWeight = FontWeights.SemiBold;
+                        return;
+                    }
+                }
+            }
+ 
+            if (CommandCode.Text != comm.MainCode || SubCommandCode.Text != comm.SubCode) {
+                commandCombox.Opacity = 0.7;
+                commandCombox.FontWeight = FontWeights.Normal;
+            }
+
+       }
+
         private async void ConfigButton_Click(object sender, RoutedEventArgs e) {
             status.Text = "Select a file";
             FileOpenPicker openPicker = new FileOpenPicker();
@@ -608,6 +695,106 @@ namespace SerialWS
                     return;
                 }
            }
+        }
+
+        private async void clearListButton_Click(object sender, RoutedEventArgs e) {
+            if (pMan.receivedPackets.Count == 0)
+                return;
+
+            ContentDialog deleteFileDialog = new ContentDialog() {
+                Title = "Clear packet history?",
+                Content = "Are you sure you wan to delete the list of received packets?",
+                PrimaryButtonText = "Cancel",
+                SecondaryButtonText = "Ok"
+            };
+
+            ContentDialogResult result = await deleteFileDialog.ShowAsync();
+
+            // Delete the file if the user clicked the primary button. 
+            /// Otherwise, do nothing. 
+            if (result == ContentDialogResult.Secondary) {
+                pMan.ClearHistory();
+            }
+        }
+
+/*        private void AdvancedCommandButton_Loaded(object sender, RoutedEventArgs e) {
+            bool allowFocusOnInteractionAvailable =
+                Windows.Foundation.Metadata.ApiInformation.IsPropertyPresent(
+                    "Windows.UI.Xaml.FrameworkElement",
+                    "AllowFocusOnInteraction");
+
+            if (allowFocusOnInteractionAvailable) {
+                var s = sender as FrameworkElement;
+                if (s != null) {
+                    s.AllowFocusOnInteraction = true;
+                }
+            }
+        }*/
+
+        private async void SendFileSection() {
+            var stream = await SelectedFile.OpenAsync(FileAccessMode.Read);
+            ulong size = stream.Size;
+
+            if (readingIndex >= stream.Size) {
+                readingIndex = 0;
+                SelectedFile = null;
+                // Cleanup once complete
+                return;
+            }
+            status.Text = "Sending packet " + (readingIndex /(ulong) Constants.PAYLOADLEN);
+
+            try {
+                if (serialPort != null) {
+                    // Create the DataWriter object and attach to OutputStream
+                    dataWriteObject = new DataWriter(serialPort.OutputStream);
+                }
+                else {
+                    status.Text = "Select a device and connect";
+                }
+                using (var inputStream = stream.GetInputStreamAt(readingIndex)) {
+                    using (var dataReader = new DataReader(inputStream)) {
+                        uint numBytesLoaded = await dataReader.LoadAsync((uint)Constants.PAYLOADLEN);
+                        byte[] payload = new byte[numBytesLoaded];
+                        dataReader.ReadBytes(payload);
+                        await WriteAsync(payload);
+                        readingIndex += numBytesLoaded;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                status.Text = "writeTextButton_Click: " + ex.Message;
+            }
+            finally {
+                // Cleanup once complete
+                if (dataWriteObject != null) {
+                    dataWriteObject.DetachStream();
+                    dataWriteObject = null;
+                }
+                int curProg = int.Parse(SubCommandCode.Text) + 1;
+                SubCommandCode.Text = curProg.ToString();
+            }
+        }
+
+        private async void SendAllButton_Click(object sender, RoutedEventArgs e) {
+            status.Text = "Select a file";
+            FileOpenPicker openPicker = new FileOpenPicker();
+            openPicker.ViewMode = PickerViewMode.Thumbnail;
+            openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            openPicker.FileTypeFilter.Add(".bin");
+            StorageFile file = await openPicker.PickSingleFileAsync();
+
+            if (file != null)
+            {
+                SelectedFile = file;
+                readingIndex = 0;
+               SendFileSection();
+           }
+        }
+
+        private void sendText_KeyUp(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e) {
+            if (e.Key == Windows.System.VirtualKey.Enter) {
+                writeTextButton_Click(null,null);
+            }
         }
     }
 }

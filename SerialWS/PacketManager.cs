@@ -7,11 +7,17 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 
 namespace  PacketManagement//SerialWS
 {
+
+    interface IAckCallback {
+        void OnAck();
+        void OnNack(string msg);
+    }
 
     class Constants
     {
@@ -25,12 +31,6 @@ namespace  PacketManagement//SerialWS
 
         public Dictionary<UInt16, string> CommandNames;
 
-        public ObservableCollection<Packet> getReceivedPacketsList { get
-            {
-                return receivedPackets;
-            }
-        }
-
         //True if we are currently reading a packat
         private bool evaluating;
         //Buffer in which we are storing the packet
@@ -41,6 +41,7 @@ namespace  PacketManagement//SerialWS
         private int expectedLen;
 
         private Int64 timeout;
+        public IAckCallback callback;
 
         public PacketManager(Dictionary<UInt16, string> comms)
         {
@@ -48,7 +49,13 @@ namespace  PacketManagement//SerialWS
             CommandNames = comms;
             evaluating = false;
             UARTBuffer = new byte[2048 + 12];
+            callback = null;
             ReadIndex = 0;
+        }
+
+
+        public void ClearHistory() {
+            receivedPackets.Clear();
         }
 
         public string CommandsToCSV() {
@@ -61,7 +68,7 @@ namespace  PacketManagement//SerialWS
 
         public void evalNewData(byte[] data)
         {
-            int i = 0, len;
+            int i = 0;
             Packet packet;
             Int64 now = Stopwatch.GetTimestamp();
 
@@ -76,6 +83,12 @@ namespace  PacketManagement//SerialWS
                 packet = validatePacket(UARTBuffer);
                 if (packet != null) {
                     receivedPackets.Insert(0, packet);
+                    if (Regex.IsMatch(packet.command.Name.ToUpper(), @"ACK") && 
+                        !Regex.IsMatch(packet.command.Name.ToUpper(), @"NACK")) {
+                        callback.OnAck();
+                    } else {
+                        callback.OnNack(packet.command.Name);
+                    }
                 }
                 return;
             }
@@ -95,6 +108,12 @@ namespace  PacketManagement//SerialWS
                     packet = validatePacket(UARTBuffer);
                     if (packet != null) {
                         receivedPackets.Insert(0, packet);
+                        if (Regex.IsMatch(packet.command.Name.ToUpper(), @"ACK") && 
+                            !Regex.IsMatch(packet.command.Name.ToUpper(), @"NACK")) {
+                            callback.OnAck();
+                        } else {
+                            callback.OnNack(packet.command.Name);
+                        }
                     }
                     i += expectedLen - ReadIndex;
                     evaluating = false;
@@ -155,13 +174,14 @@ namespace  PacketManagement//SerialWS
 
     }
 
-    class Packet
+    public class Packet
         {
         public byte senderAdd { get; set; }
         public byte receiverAdd { get; set; }
         public Command command { get; set; }
         public byte[] payload { get; set; }
         public string hexPayload { get { return BitConverter.ToString(payload); } }
+        public string asciiPayload { get { return System.Text.Encoding.ASCII.GetString(payload); } }
         public int packetLen { get { return payload.Length + 12; } }
         public string timeStamp { get; set; }
 
@@ -180,6 +200,9 @@ namespace  PacketManagement//SerialWS
     {
         private ushort code;
         private string name;
+
+        public string MainCode { get { return BitConverter.ToString(new byte[1] { (byte)(code >> 8) }); } }
+        public string SubCode { get { return BitConverter.ToString(new byte[1] { (byte)(code & 0x00FF) }); } }
  
         /*public Command(ushort c) : this(Utils.CommandNames.ContainsKey(c) ? 
             Utils.CommandNames[c] :

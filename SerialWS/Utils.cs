@@ -16,65 +16,14 @@ namespace SerialWS
         public static string BAUDKEY = "baudChoice";
         public static string SENDERKEY = "sender";
         public static string RECEIVERKEY = "receiver";
+
+        public static int PAYLOADLEN = 2048;
     }
 
     static class Utils
     {
         public static uint packSize = 2048;
-
-        public static Dictionary<ushort, string> CommandNames = new Dictionary<ushort, string>()
-        {
-            /*READ*/
-            { 0x0100, "Read versione programma" },
-            { 0x0101, "Read dati macchina" },
-            { 0x0102, "Read ora" },
-            { 0x0500, "Read status macchina" },
-            { 0x0501, "Read status programma" },
-            { 0x0502, "Read temperatura, livello, velocità" },
-            { 0x0503, "Read stato ingressi" },
-            { 0x0504, "Read uscite" },
-            { 0x0a00, "Read allarmi" },
-            { 0x0a01, "Read statistiche" },
-            { 0x0f00, "Read parametri riservati HSW" },
-            { 0x0f01, "Read programma n" },
-            { 0x0f02, "Read nome programma n" },
-            { 0x0f03, "Read lista di programmi" },
-            { 0x0f04, "Read lista dei nomi programma" },
-            /*WRITE*/
-            { 0x7800, "Write stop macchina" },
-            { 0x7801, "Write start macchina" },
-            { 0x7802, "Write programma più" },
-            { 0x7803, "Write programma meno" },
-            { 0x7804, "Write step piu" },
-            { 0x7805, "Write step meno" },
-            { 0x7d00, "Write visualizza pagina principale" },
-            { 0x7d01, "Write visualizza pagina in/out" },
-            { 0x7d02, "Write visualizza pagina versione programma" },
-            { 0x8200, "Write visualizza pagina test input" },
-            { 0x8205, "Write visualizza pagina test output" },
-            { 0x8206, "Write azzera tutti output" },
-            { 0x8207, "Write attiva output n" },
-            { 0x8208, "Write azzera output n" },
-            { 0x820a, "Write visualzza pagina test oblo'" },
-            { 0x820b, "Write chiudi oblo'" },
-            { 0x820c, "Write apri oblo'" },
-            { 0x9600, "Write parametri riservati HSW" },
-            { 0x9601, "Write programma n" },
-            { 0x9602, "Write nome programma n" },
-            { 0x9603, "Write tutti i programmi" },
-            { 0x9604, "Write tutti i nomi programma" },
-            /*ACK*/
-            { 0xf500, "Ack ok" },
-            { 0xfa00, "Nack time out" },
-            { 0xfa01, "Nack crc errato" },
-            { 0xfa02, "Nack comando sconosciuto" },
-            { 0xfa03, "Nack non eseguibile" },
-            { 0xfa04, "Nack contesto errato" },
-            { 0xfa05, "Nack occupato" },
-        };
-
-
-
+        
         public static List<byte[]> formPackets(byte[] content, byte sender, byte receiver, byte[] command)
         {
             List<byte[]> result = new List<byte[]>();
