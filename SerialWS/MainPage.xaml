@@ -10,7 +10,7 @@
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" Width="auto">
+    mc:Ignorable="d" Width="auto" FontFamily="Consolas">
 
     <Page.Resources>
         <CollectionViewSource x:Name="DeviceListSource"/>
@@ -107,21 +107,31 @@
         <!-- Payload -->
         <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical"
                     Padding="50,0,50,0" Width="auto" Height="auto" HorizontalAlignment="Stretch">
-            <TextBox Name="sendText" Width="500" Height="100" IsReadOnly="False" TextWrapping="Wrap" KeyUp="sendText_KeyUp">
+            <TextBox Name="sendText" Width="500" Height="100" IsReadOnly="False"
+                     TextWrapping="Wrap" KeyDown="sendText_KeyDown" Text="{x:Bind ViewModel.TextToSend, Mode=TwoWay}">
             </TextBox>
-            <StackPanel Orientation="Horizontal" Width="auto"  HorizontalAlignment="Right">
-                    <TextBlock Grid.Column="0" x:Name="writeFile"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="5*"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <CheckBox x:Name="AsciiCheckBox" Content="ASCII" Checked="AsciiCheckBox_Checked" Unchecked="AsciiCheckBox_Unchecked"></CheckBox>
+                    <TextBlock Grid.Column="1" x:Name="writeFile" HorizontalAlignment="Right"
                                Margin="0,0,100,0" VerticalAlignment="Center" Text="{x:Bind ViewModel.SelectedFileName, Mode=OneWay}"/>
-                <Button x:Name="selectFileButton" Content="Open File" Click="selectFileButton_Click"/>
-            </StackPanel>
+                <Button Grid.Column="2" x:Name="selectFileButton" Content="Open File" Click="selectFileButton_Click"/>
+            </Grid>
         </StackPanel>
 
         <!-- Send buttons -->
         <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Orientation="Vertical" Margin="10,0,10,0" Width="auto">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="125"></ColumnDefinition>
-                    <ColumnDefinition Width="125"></ColumnDefinition>
+                    <ColumnDefinition Width="auto"></ColumnDefinition>
+                    <ColumnDefinition Width="auto"></ColumnDefinition>
                     <ColumnDefinition Width="auto"></ColumnDefinition>
                     <ColumnDefinition Width="auto"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
@@ -131,34 +141,35 @@
                     <RowDefinition Height="auto"></RowDefinition>
                     <RowDefinition Height="auto"></RowDefinition>
                     <RowDefinition Height="auto"></RowDefinition>
+                    <RowDefinition Height="auto"></RowDefinition>
                 </Grid.RowDefinitions>
 
 
-                <ComboBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" FontWeight="SemiBold"
-                          x:Name="commandCombox" SelectionChanged="commandCombox_SelectionChanged" Background="Gray"
-                          ItemsSource="{Binding ViewModel.ListOfCommands}" DisplayMemberPath="Name" Margin="16,0,10,0">
+                <ComboBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Stretch" FontWeight="SemiBold"
+                          x:Name="commandCombox" SelectionChanged="commandCombox_SelectionChanged" Background="Gray" MaxWidth="357"
+                          ItemsSource="{Binding ViewModel.ListOfCommands}" FontFamily="Consolas"  DisplayMemberPath="Name" Margin="19,0,10,0">
                 </ComboBox>
 
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="Sender" VerticalAlignment="Bottom"
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Sender" VerticalAlignment="Bottom"
                            FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
-                <TextBlock Grid.Row="0" Grid.Column="3" Text="Receiver" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+               <TextBlock Grid.Row="3" Grid.Column="1" Text="Receiver" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Code" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="Subcode" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="Subcode" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
 
                 <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
                     <TextBlock FontWeight="SemiBold">0x</TextBlock>
-                    <TextBox x:Name="CommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="HexValidation"
-                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.MainCode}" Width="98">
+                    <TextBox x:Name="CommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="AddressHexValidation"
+                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.MainCode}" Width="120">
                         <ToolTipService.Placement>Top</ToolTipService.Placement>
                         <ToolTipService.ToolTip>
                             <TextBlock Text="Main command code"/>
                         </ToolTipService.ToolTip>
                     </TextBox>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
                     <TextBlock FontWeight="SemiBold">0x</TextBlock>
-                    <TextBox x:Name="SubCommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="HexValidation"
-                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.SubCode}" Width="98">
+                    <TextBox x:Name="SubCommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="AddressHexValidation"
+                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.SubCode}" Width="120">
                         <ToolTipService.Placement>Top</ToolTipService.Placement>
                         <ToolTipService.ToolTip>
                             <TextBlock Text="Sub command code"/>
@@ -166,16 +177,18 @@
                     </TextBox>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">
+                <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
                     <TextBlock FontWeight="SemiBold">0x</TextBlock>
                     <TextBox x:Name="senderAdd" TextChanged="sendrcv_TextChanged" Style="{StaticResource TextBlockStyle}" Width="65">
-                        <ToolTipService.Placement>Top</ToolTipService.Placement>
+                        <ToolTipService.Placement>
+                            <PlacementMode>Top</PlacementMode>
+                        </ToolTipService.Placement>
                         <ToolTipService.ToolTip>
                             <TextBlock Text="Sender address"/>
                         </ToolTipService.ToolTip>
                     </TextBox>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
+                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
                     <TextBlock FontWeight="SemiBold" >0x</TextBlock>
                     <TextBox x:Name="receiverAdd" Style="{StaticResource TextBlockStyle}" Width="65">
                         <ToolTipService.Placement>Top</ToolTipService.Placement>
@@ -187,7 +200,7 @@
 
                 <!--<TextBox Grid.Column="1" Grid.Row="3" x:Name="numPacketsToSend"/>-->
 
-                <Button Grid.Column="2" Grid.Row="3" Grid.ColumnSpan="2" Margin="10,10,10,0" HorizontalAlignment="Right"
+                <Button Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="10,10,10,0" HorizontalAlignment="Right"
                         Content="Send Command" x:Name="writeTextButton" Click="writeTextButton_Click"/>
             </Grid>
         </StackPanel>

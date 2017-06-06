@@ -29,7 +29,7 @@ namespace  PacketManagement//SerialWS
     {
         public ObservableCollection<Packet> receivedPackets { get; }
 
-        public Dictionary<UInt16, string> CommandNames;
+        public List<Tuple<UInt16, string>> CommandNames;
 
         //True if we are currently reading a packat
         private bool evaluating;
@@ -43,7 +43,7 @@ namespace  PacketManagement//SerialWS
         private Int64 timeout;
         public IAckCallback callback;
 
-        public PacketManager(Dictionary<UInt16, string> comms)
+        public PacketManager(List<Tuple<UInt16, string>> comms)
         {
             receivedPackets = new ObservableCollection<Packet>();
             CommandNames = comms;
@@ -60,8 +60,8 @@ namespace  PacketManagement//SerialWS
 
         public string CommandsToCSV() {
             string res = "";
-            foreach (KeyValuePair<UInt16, string> val in CommandNames) {
-                res += "0x" + val.Key.ToString("X4") + " ; " + val.Value +"\r\n";
+            foreach (Tuple<UInt16, string> val in CommandNames) {
+                res += "0x" + val.Item1.ToString("X4") + " ; " + val.Item2 +"\r\n";
             }
             return res;
         }
@@ -131,6 +131,15 @@ namespace  PacketManagement//SerialWS
         }
 
 
+        private string findCommandByCode(ushort code) {
+            foreach(Tuple<UInt16, string> c in CommandNames) {
+                if (c.Item1 == code) {
+                    return c.Item2;
+                }
+            }
+            return "Unknown command";
+        }
+
         public Packet validatePacket(byte[] packet)
         {
             ushort len, comm;
@@ -150,8 +159,8 @@ namespace  PacketManagement//SerialWS
             s = packet[1];
             r = packet[2];
             comm = (ushort)(packet[3] << 8 | packet[4]);
-            c = new Command(CommandNames.ContainsKey(comm) ?
-                CommandNames[comm] : "Unknown command", comm);
+            string tmp = findCommandByCode(comm);
+            c = new Command( tmp, comm);
             len = (ushort)(packet[5] << 8 | packet[6]);
 
             content = new byte[len];

@@ -130,14 +130,23 @@ namespace SerialWS
         public static string GetTimestamp(DateTime value) {
             return value.ToString("HH:mm:ss");
         }
+        
+        public static Tuple<UInt16, string> FindInCommandList(UInt16 code, List <Tuple<UInt16, string>> list) {
+            foreach(Tuple<UInt16, string> t in list) {
+                if (t.Item1 == code) {
+                    return t;
+                }
+            }
+            return null;
+        }
 
-        public static Dictionary<UInt16, string> readCSV(string csv) {
+        public static List<Tuple<UInt16, string>> readCSV(string csv) {
             csv = Regex.Replace(csv,"\r", "");
             ushort code;
             string name;
             string[] content;
             string[] lines = csv.Split('\n');
-            Dictionary<ushort, string> result = new Dictionary<ushort, string>();
+            List<Tuple<ushort, string>> result = new List<Tuple<ushort, string>>();
             foreach (string val in lines) {
                 content = val.Split(';');
                 if (content.Length < 2)
@@ -152,9 +161,61 @@ namespace SerialWS
                 if (code > 0xFFFF)
                     throw new InvalidCSVException(code.ToString() + " code is too big");
                 name = content[1];
-                result.Add(code, name);
+                Tuple<UInt16, string> t = FindInCommandList(code, result);
+                if (t == null) {
+                    result.Add(new Tuple<ushort, string>(code, name));
+                } else {
+                    result.Add(new Tuple<UInt16, string>(code, t.Item2));
+                }
             }
             return result;
+        }
+
+
+        public static bool IsKeyHex(Windows.System.VirtualKey k) {
+            if (k == Windows.System.VirtualKey.A || 
+                k == Windows.System.VirtualKey.B || 
+                k == Windows.System.VirtualKey.C || 
+                k == Windows.System.VirtualKey.D || 
+                k == Windows.System.VirtualKey.E || 
+                k == Windows.System.VirtualKey.F || 
+                k == Windows.System.VirtualKey.Number0 || 
+                k == Windows.System.VirtualKey.Number1 || 
+                k == Windows.System.VirtualKey.Number2 || 
+                k == Windows.System.VirtualKey.Number3 || 
+                k == Windows.System.VirtualKey.Number4 || 
+                k == Windows.System.VirtualKey.Number5 || 
+                k == Windows.System.VirtualKey.Number6 || 
+                k == Windows.System.VirtualKey.Number7 || 
+                k == Windows.System.VirtualKey.Number8 || 
+                k == Windows.System.VirtualKey.Number9 ||
+                k == Windows.System.VirtualKey.Space || 
+                k == Windows.System.VirtualKey.Subtract) { 
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public static string ConvertHex(String hexString) {
+            try {
+                string ascii = string.Empty;
+
+                for (int i = 0; i < hexString.Length; i += 2) {
+                    String hs = string.Empty;
+
+                    hs = hexString.Substring(i, 2);
+                    uint decval = System.Convert.ToUInt32(hs, 16);
+                    char character = System.Convert.ToChar(decval);
+                    ascii += character;
+
+                }
+
+                return ascii;
+            }
+            catch (Exception ex1) {  }
+
+            return string.Empty;
         }
 
     }

@@ -20,6 +20,7 @@ using System.Text.RegularExpressions;
 using SerialWS.Exceptions;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Text;
+using System.Text;
 
 namespace SerialWS
 {
@@ -31,6 +32,15 @@ namespace SerialWS
         private ObservableCollection<Command> listOfCommands;
 
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
+
+        private string _textToSend;
+
+        public string TextToSend {
+            get { return _textToSend; }
+            set { _textToSend = value;
+                this.OnPropertyChanged("TextToSend");
+            }
+        }
 
         public HostViewModel()
         {
@@ -104,10 +114,12 @@ namespace SerialWS
 
         public MainPage()
         {
-            pMan = new PacketManager(new Dictionary<ushort, string>());
+            pMan = new PacketManager(new List<Tuple<ushort, string>>());
             this.InitializeComponent();
             this.DataContext = this;
             pMan.callback = this;
+            ViewModel.TextToSend = "";
+            oldText = "";
 
             comPortInput.IsEnabled = false;
 
@@ -149,7 +161,7 @@ namespace SerialWS
                 composite[Constants.BAUDKEY] = 0;
             }
 
-            Dictionary<UInt16, string> commands = new Dictionary<ushort, string>();
+            List<Tuple<UInt16, string>> commands = new List<Tuple<ushort, string>>();
             try {
                 StorageFile file = await localFolder.GetFileAsync("config.csv");
                 string text = await FileIO.ReadTextAsync(file);
@@ -157,8 +169,8 @@ namespace SerialWS
                 SetCommandList(commands);
                 //tempsavecomm();
             }
-            catch (Exception ex) {
-                status.Text = ex.ToString();
+            catch (Exception ex1) {
+                status.Text = ex1.ToString();
             }
 
             baudRateSource.Source = baudRate;
@@ -193,9 +205,9 @@ namespace SerialWS
                 comPortInput.IsEnabled = true;
                 ConnectDevices.SelectedIndex = -1;
             }
-            catch (Exception ex)
+            catch (Exception ex1)
             {
-                status.Text = ex.Message;
+                status.Text = ex1.Message;
             }
         }
 
@@ -255,9 +267,9 @@ namespace SerialWS
                 baudCombox.IsEnabled = false;
                 Listen();
             }
-            catch (Exception ex)
+            catch (Exception ex1)
             {
-                status.Text = ex.Message;
+                status.Text = ex1.Message;
                 comPortInput.IsEnabled = true;
             }
         }
@@ -299,10 +311,8 @@ namespace SerialWS
                 UInt32 bytesWritten = await storeAsyncTask;
                 if (bytesWritten > 0)
                 {
-                    //status.Text = sendText.Text + ", ";
                     status.Text = bytesWritten + " bytes written successfully!";
                 }
-                //sendText.Text = "";
             }
         }
 
@@ -326,16 +336,16 @@ namespace SerialWS
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex1)
             {
-                if (ex.GetType().Name == "TaskCanceledException")
+                if (ex1.GetType().Name == "TaskCanceledException")
                 {
                     status.Text = "Reading task was cancelled, closing device and cleaning up";
                     CloseDevice();
                 }
                 else
                 {
-                    status.Text = ex.Message;
+                    status.Text = ex1.Message;
                 }
             }
             finally
@@ -439,9 +449,9 @@ namespace SerialWS
                 CloseDevice();
                 ListAvailablePorts();
             }
-            catch (Exception ex)
+            catch (Exception ex1)
             {
-                status.Text = ex.Message;
+                status.Text = ex1.Message;
             }
         }
 
@@ -468,7 +478,7 @@ namespace SerialWS
                 byte[] text = await Utils.ReadFile(file);
                 string res;
                 res = BitConverter.ToString(text);
-                sendText.Text = res;
+                ViewModel.TextToSend = res;
             }
         }
 
@@ -545,27 +555,32 @@ namespace SerialWS
                 savePacketButton.IsEnabled = false;
         }
 
-        private async void writeTextButton_Click(object sender, RoutedEventArgs e)
-        {
+        private async void writeTextButton_Click(object sender, RoutedEventArgs e) {
+            sendTextUART();
+        }
+
+
+        private async void sendTextUART() { 
             try {
                 if (serialPort != null) {
                     // Create the DataWriter object and attach to OutputStream
                     dataWriteObject = new DataWriter(serialPort.OutputStream);
-                    string text = sendText.Text;
+                    string text = ViewModel.TextToSend;
                     int repeat = 1;
-                    text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
-                    /*try {
-                        repeat = int.Parse(numPacketsToSend.Text);
-                    } catch (Exception ex1) {
-                        repeat = 1;
-                    }*/
+                    byte[] payload;
 
-                    //Launch the WriteAsync task to perform the write
-                    if (text.Length % 2 != 0) {
-                        status.Text = "Invalid hexadecimal payload";
-                        return;
+                    if (!(bool)AsciiCheckBox.IsChecked) {
+                        text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
+
+                        //Launch the WriteAsync task to perform the write
+                        if (text.Length % 2 != 0) {
+                            status.Text = "Invalid hexadecimal payload";
+                            return;
+                        }
+                        payload = Utils.StringToByteArray(text);
+                    } else {
+                        payload = Encoding.ASCII.GetBytes(text);
                     }
-                    byte[] payload = Utils.StringToByteArray(text);
                     
                     for (int i = 0; i < repeat; i++) 
                         await WriteAsync(payload);
@@ -575,9 +590,9 @@ namespace SerialWS
                     status.Text = "Select a device and connect";
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex1)
             {
-                status.Text = "writeTextButton_Click: " + ex.Message;
+                status.Text = "writeTextButton_Click: " + ex1.Message;
             }
             finally
             {
@@ -626,14 +641,14 @@ namespace SerialWS
             await FileIO.WriteTextAsync(file, csv);
         }
 
-        private void SetCommandList(Dictionary<UInt16, string> dict) {
+        private void SetCommandList(List<Tuple<UInt16, string>> dict) {
             ViewModel.ListOfCommands = new ObservableCollection<Command>();
             if (pMan == null)
                 pMan = new PacketManager(dict);
             else
                 pMan.CommandNames = dict;
-            foreach(KeyValuePair<ushort, string> entry in dict) {
-                ViewModel.ListOfCommands.Add(new Command(entry.Value, entry.Key));
+            foreach(Tuple<ushort, string> entry in dict) {
+                ViewModel.ListOfCommands.Add(new Command(entry.Item2, entry.Item1));
             }
             //TODO: Prova a mettere questa roba nella classe HostViewModel, con notifica automatica dei cambiamenti
             //commandCombox.ItemsSource = ViewModel.ListOfCommands;
@@ -643,7 +658,7 @@ namespace SerialWS
         }
 
 
-        private void HexValidation(object s, TextChangedEventArgs args) {
+        private void AddressHexValidation(object s, TextChangedEventArgs args) {
             TextBox sender = (TextBox)s;
             Command comm = (Command)commandCombox.SelectedItem;
             if (!Regex.IsMatch(sender.Text, @"\A\b[0-9a-fA-F]+\b\Z") || sender.Text.Length > 2) {
@@ -690,8 +705,8 @@ namespace SerialWS
                     SetCommandList(Utils.readCSV(text));
                     SaveNewConfigFile();
                 }
-                catch (Exception ex) {
-                    status.Text = "Invalid CSV file: " + ex.ToString();
+                catch (Exception ex1) {
+                    status.Text = "Invalid CSV file: " + ex1.ToString();
                     return;
                 }
            }
@@ -761,8 +776,8 @@ namespace SerialWS
                     }
                 }
             }
-            catch (Exception ex) {
-                status.Text = "writeTextButton_Click: " + ex.Message;
+            catch (Exception ex1) {
+                status.Text = "writeTextButton_Click: " + ex1.Message;
             }
             finally {
                 // Cleanup once complete
@@ -791,10 +806,36 @@ namespace SerialWS
            }
         }
 
-        private void sendText_KeyUp(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e) {
-            if (e.Key == Windows.System.VirtualKey.Enter) {
-                writeTextButton_Click(null,null);
-            }
+        private string oldText;
+
+        private void sendText_KeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e) {
+            ViewModel.TextToSend = sendText.Text;
+            string newText = sendText.Text;
+            /*if (e.Key == Windows.System.VirtualKey.Enter) {
+                sendTextUART();
+                e.Handled = true;
+            } else {*/
+               if (!(bool)AsciiCheckBox.IsChecked) {
+                    if (!Utils.IsKeyHex(e.Key)) {
+                        e.Handled = true;
+                    }
+                }
+            //}
+            oldText = ViewModel.TextToSend; 
+        }
+
+        private void AsciiCheckBox_Unchecked(object sender, RoutedEventArgs e) {
+            byte[] ba = Encoding.ASCII.GetBytes(sendText.Text);
+            var hexString = BitConverter.ToString(ba).Replace("-", " ");
+            
+            ViewModel.TextToSend = hexString;
+        }
+
+        private void AsciiCheckBox_Checked(object sender, RoutedEventArgs e) {
+            string text = ViewModel.TextToSend;
+            text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
+            text = Utils.ConvertHex(text);
+            ViewModel.TextToSend = text;
         }
     }
 }
