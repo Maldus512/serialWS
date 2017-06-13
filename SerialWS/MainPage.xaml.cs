@@ -21,6 +21,8 @@ using SerialWS.Exceptions;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Text;
 using System.Text;
+using System.IO;
+using Windows.Networking.Sockets;
 
 namespace SerialWS
 {
@@ -93,6 +95,8 @@ namespace SerialWS
         DataReader dataReaderObject = null;
         static Array baudRate = new uint[] { 4800, 7200, 9600, 56000, 76800, 115200 };
 
+        private StreamSocket clientSocket = null;
+
 
         public HostViewModel ViewModel { get; set; } = new HostViewModel();
 
@@ -103,7 +107,7 @@ namespace SerialWS
 
         private PacketManager pMan;
 
-        private byte[] readBuffer;
+        //private byte[] readBuffer;
 
         private StorageFile SelectedFile;
         private ulong readingIndex;
@@ -159,6 +163,8 @@ namespace SerialWS
                 composite[Constants.SENDERKEY] = "00";
                 composite[Constants.RECEIVERKEY] = "00";
                 composite[Constants.BAUDKEY] = 0;
+                composite[Constants.IPADDR] = "";
+                composite[Constants.PORT] = "80";
             }
 
             List<Tuple<UInt16, string>> commands = new List<Tuple<ushort, string>>();
@@ -170,6 +176,7 @@ namespace SerialWS
                 //tempsavecomm();
             }
             catch (Exception ex1) {
+                SetCommandList(new List<Tuple<ushort, string>>());
                 status.Text = ex1.ToString();
             }
 
@@ -177,6 +184,8 @@ namespace SerialWS
             baudCombox.SelectedIndex = (int)composite[Constants.BAUDKEY];
             senderAdd.Text = (string)composite[Constants.SENDERKEY];
             receiverAdd.Text = (string)composite[Constants.RECEIVERKEY];
+            ipAddrTextBox.Text = (string)composite[Constants.IPADDR];
+            portTextBox.Text = (string)composite[Constants.PORT];
 
             localSettings.Values[Constants.SETTINGSKEY] = composite;
         }
@@ -265,7 +274,7 @@ namespace SerialWS
                 // Enable 'WRITE' button to allow sending data
                 ConnectDeviceFlyout.Hide();
                 baudCombox.IsEnabled = false;
-                Listen();
+                ListenSerial();
             }
             catch (Exception ex1)
             {
@@ -316,19 +325,45 @@ namespace SerialWS
             }
         }
 
+
+
+        private async void ListenSock(string dest, string port) {
+            try {
+                //Create the StreamSocket and establish a connection to the echo server.
+                clientSocket = new StreamSocket();
+
+                //The server hostname that we will be establishing a connection to. We will be running the server and client locally,
+                //so we will use localhost as the hostname.
+                Windows.Networking.HostName serverHost = new Windows.Networking.HostName(dest);
+
+                //Every protocol typically has a standard port number. For example HTTP is typically 80, FTP is 20 and 21, etc.
+                //For the echo server/client application we will use a random port 1337.
+                await clientSocket.ConnectAsync(serverHost, port);
+
+                dataReaderObject = new DataReader(clientSocket.InputStream);
+
+                while (true) {
+                    await ReadAsync(ReadCancellationTokenSource.Token);
+                }
+            } catch (Exception ex1) {
+                status.Text = ex1.Message;
+            }
+        }
+
+        
         /// <summary>
         /// - Create a DataReader object
         /// - Create an async task to read from the SerialDevice InputStream
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void Listen()
+        private async void ListenSerial()
         {
             try {
                 if (serialPort != null) {
                     dataReaderObject = new DataReader(serialPort.InputStream);
 
-                    readBuffer = new byte[4096];
+                    //readBuffer = new byte[4096];
 
                     // keep reading the serial input
                     while (true) {
@@ -556,7 +591,11 @@ namespace SerialWS
         }
 
         private async void writeTextButton_Click(object sender, RoutedEventArgs e) {
-            sendTextUART();
+            if (serialPort != null) {
+                sendTextUART();
+            } else if (clientSocket != null) {
+                sendTextSock();
+            }
         }
 
 
@@ -599,6 +638,46 @@ namespace SerialWS
                 // Cleanup once complete
                 if (dataWriteObject != null)
                 {
+                    dataWriteObject.DetachStream();
+                    dataWriteObject = null;
+                }
+            }
+        }
+
+
+
+        private async void sendTextSock() {
+            try {
+                if (clientSocket != null) {
+                    // Create the DataWriter object and attach to OutputStream
+                    dataWriteObject = new DataWriter(clientSocket.OutputStream);
+                    string text = ViewModel.TextToSend;
+                    int repeat = 1;
+                    byte[] payload;
+
+                    if (!(bool)AsciiCheckBox.IsChecked) {
+                        text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
+
+                        //Launch the WriteAsync task to perform the write
+                        if (text.Length % 2 != 0) {
+                            status.Text = "Invalid hexadecimal payload";
+                            return;
+                        }
+                        payload = Utils.StringToByteArray(text);
+                    } else {
+                        payload = Encoding.ASCII.GetBytes(text);
+                    }
+
+                    for (int i = 0; i < repeat; i++)
+                        await WriteAsync(payload);
+                } else {
+                    status.Text = "Select a device and connect";
+                }
+            } catch (Exception ex1) {
+                status.Text = "writeTextButton_Click: " + ex1.Message;
+            } finally {
+                // Cleanup once complete
+                if (dataWriteObject != null) {
                     dataWriteObject.DetachStream();
                     dataWriteObject = null;
                 }
@@ -680,12 +759,13 @@ namespace SerialWS
                     }
                 }
             }
- 
-            if (CommandCode.Text != comm.MainCode || SubCommandCode.Text != comm.SubCode) {
-                commandCombox.Opacity = 0.7;
-                commandCombox.FontWeight = FontWeights.Normal;
-            }
 
+            if (comm != null) {
+                if (CommandCode.Text != comm.MainCode || SubCommandCode.Text != comm.SubCode) {
+                    commandCombox.Opacity = 0.7;
+                    commandCombox.FontWeight = FontWeights.Normal;
+                }
+            }
        }
 
         private async void ConfigButton_Click(object sender, RoutedEventArgs e) {
@@ -707,9 +787,13 @@ namespace SerialWS
                 }
                 catch (Exception ex1) {
                     status.Text = "Invalid CSV file: " + ex1.ToString();
+                    SetCommandList(new List<Tuple<ushort, string>>());
+
                     return;
                 }
-           }
+           } else {
+                SetCommandList(new List<Tuple<ushort, string>>());
+            }
         }
 
         private async void clearListButton_Click(object sender, RoutedEventArgs e) {
@@ -836,6 +920,62 @@ namespace SerialWS
             text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
             text = Utils.ConvertHex(text);
             ViewModel.TextToSend = text;
+        }
+
+        private void SerialSockCombobox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (serialStackPanel == null || socketStackPanel == null)
+            {
+                return;
+            }
+            if (SerialSockCombobox.SelectedIndex == 0)
+            {
+                serialStackPanel.Visibility = Visibility.Visible;
+                socketStackPanel.Visibility = Visibility.Collapsed;
+            } else
+            {
+                serialStackPanel.Visibility = Visibility.Collapsed;
+                socketStackPanel.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void sockConnect_Click(object sender, RoutedEventArgs e) {
+            var selection = ConnectDevices.SelectedItems;
+            string ip = ipAddrTextBox.Text;
+            string port = portTextBox.Text;
+
+            //TODO check for correct input
+
+            ApplicationDataCompositeValue composite = (ApplicationDataCompositeValue)localSettings.Values[Constants.SETTINGSKEY];
+            if (composite != null) {
+                composite[Constants.IPADDR] = ipAddrTextBox.Text;
+                composite[Constants.PORT] = portTextBox.Text;
+                localSettings.Values[Constants.SETTINGSKEY] = composite;
+            }
+
+
+            try {
+                status.Text = "Serial port configured successfully: ";
+                // Set the RcvdText field to invoke the TextChanged callback
+                // The callback launches an async Read task to wait for data
+                rcvdText.Text = "Waiting for data...";
+
+
+                // Create cancellation token object to close I/O operations when closing the device
+                ReadCancellationTokenSource = new CancellationTokenSource();
+
+                // Enable 'WRITE' button to allow sending data
+                ConnectDeviceFlyout.Hide();
+
+                ListenSock(ip, port);
+            } catch (Exception ex1) {
+                status.Text = ex1.Message;
+            }
+        }
+
+        private void closeSock_Click(object sender, RoutedEventArgs e) {
+            clientSocket.Dispose();
+            clientSocket = null;
         }
     }
 }

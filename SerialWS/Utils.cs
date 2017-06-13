@@ -16,6 +16,8 @@ namespace SerialWS
         public static string BAUDKEY = "baudChoice";
         public static string SENDERKEY = "sender";
         public static string RECEIVERKEY = "receiver";
+        public static string IPADDR = "ip_address";
+        public static string PORT = "port";
 
         public static int PAYLOADLEN = 2048;
     }

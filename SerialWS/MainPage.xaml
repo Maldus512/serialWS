@@ -71,20 +71,28 @@
         <Button Grid.Row="0" Grid.Column="1" Content="Select device" HorizontalAlignment="Right">
             <Button.Flyout>
                     <Flyout x:Name="ConnectDeviceFlyout" Placement="Left">
-                        <StackPanel Orientation="Vertical">
+
+                        <StackPanel Orientation="Vertical" Width="400">
+                            <ComboBox Margin="0,10,0,10" Name="SerialSockCombobox" 
+                                      SelectionChanged="SerialSockCombobox_SelectionChanged">
+                                <ComboBoxItem Name="serial" IsSelected="True">Serial port</ComboBoxItem>
+                                <ComboBoxItem Name="socket">Socket</ComboBoxItem>
+                            </ComboBox>
+                   
+                            <StackPanel Orientation="Vertical" Name="serialStackPanel">
                                 <ListBox x:Name="ConnectDevices" ScrollViewer.HorizontalScrollMode="Enabled" 
-                                         ScrollViewer.HorizontalScrollBarVisibility="Visible" 
-                                         ItemsSource="{Binding Source={StaticResource DeviceListSource}}" 
-                                         Width="400" Height="80" Background="Gray">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" />
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                             ScrollViewer.HorizontalScrollBarVisibility="Visible" 
+                                             ItemsSource="{Binding Source={StaticResource DeviceListSource}}" 
+                                             Width="400" Height="80" Background="Gray">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" />
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                     <ComboBox x:Name="baudCombox" ItemsSource="{Binding Source={StaticResource baudRateSource}}" 
-                          Margin="10,0,10,0" SelectionChanged="baudCombox_SelectionChanged">
+                                  Margin="10,0,10,0" SelectionChanged="baudCombox_SelectionChanged">
                                     </ComboBox>
                                     <Button Name="comPortInput" Content="Connect" Click="comPortInput_Click" Style="{StaticResource ButtonStyle}"/>
                                     <Button Name="closeDevice" Content="Disconnect" Click="closeDevice_Click" Style="{StaticResource ButtonStyle}"/>
@@ -93,7 +101,35 @@
                                     </Button>
                                 </StackPanel>
                         </StackPanel>
-                    </Flyout>
+                        <StackPanel Orientation="Vertical" Name="socketStackPanel" Visibility="Collapsed">
+                            <Grid Width="400">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3*"></ColumnDefinition>
+                                    <ColumnDefinition Width="7*"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto"></RowDefinition>
+                                    <RowDefinition Height="auto"></RowDefinition>
+                                    <RowDefinition Height="auto"></RowDefinition>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="0"  VerticalAlignment="Center">Address: </TextBlock>
+                                <TextBox HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="0" VerticalAlignment="Center"
+                                         Name="ipAddrTextBox" Margin="0,5,0,5"></TextBox>
+                                <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center">Port:</TextBlock>
+                                <TextBox Grid.Column="1" Grid.Row="1"   VerticalAlignment="Center" 
+                                         Width="100" Name="portTextBox" Margin="0,5,0,5" HorizontalAlignment="Left"></TextBox>
+                                <Button Grid.Column="0" Grid.Row="2" Name="sockConnect" Click="sockConnect_Click" 
+                                        Content="Connect" Style="{StaticResource ButtonStyle}"/>
+                                <Button Grid.Column="1" Grid.Row="2" Name="closeSock" Content="Disconnect"
+                                        Click="closeSock_Click" Style="{StaticResource ButtonStyle}"/>
+
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+
+                </Flyout>
                 </Button.Flyout>
         </Button>
 
