@@ -107,7 +107,6 @@ namespace SerialWS
 
         private PacketManager pMan;
 
-        //private byte[] readBuffer;
 
         private StorageFile SelectedFile;
         private ulong readingIndex;
@@ -116,8 +115,7 @@ namespace SerialWS
 
         private byte[] lastReceivedBytes;
 
-        public MainPage()
-        {
+        public MainPage() {
             pMan = new PacketManager(new List<Tuple<ushort, string>>());
             this.InitializeComponent();
             this.DataContext = this;
@@ -195,27 +193,22 @@ namespace SerialWS
         /// - Use SerialDevice.GetDeviceSelector to enumerate all serial devices
         /// - Attaches the DeviceInformation to the ListBox source so that DeviceIds are displayed
         /// </summary>
-        private async void ListAvailablePorts()
-        {
+        private async void ListAvailablePorts() {
             listOfDevices = new ObservableCollection<DeviceInformation>();
-            try
-            {
+            try {
                 string aqs = SerialDevice.GetDeviceSelector();
                 var dis = await DeviceInformation.FindAllAsync(aqs);
 
                 status.Text = "Select a device and connect";
 
-                for (int i = 0; i < dis.Count; i++)
-                {
+                for (int i = 0; i < dis.Count; i++) {
                     listOfDevices.Add(dis[i]);
                 }
 
                 DeviceListSource.Source = listOfDevices;
                 comPortInput.IsEnabled = true;
                 ConnectDevices.SelectedIndex = -1;
-            }
-            catch (Exception ex1)
-            {
+            } catch (Exception ex1) {
                 status.Text = ex1.Message;
             }
         }
@@ -229,20 +222,17 @@ namespace SerialWS
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void comPortInput_Click(object sender, RoutedEventArgs e)
-        {
+        private async void comPortInput_Click(object sender, RoutedEventArgs e) {
             var selection = ConnectDevices.SelectedItems;
 
-            if (selection.Count <= 0)
-            {
+            if (selection.Count <= 0) {
                 status.Text = "Select a device and connect";
                 return;
             }
 
             DeviceInformation entry = (DeviceInformation)selection[0];
 
-            try
-            {
+            try {
                 serialPort = await SerialDevice.FromIdAsync(entry.Id);
 
                 // Disable the 'Connect' button 
@@ -275,9 +265,7 @@ namespace SerialWS
                 ConnectDeviceFlyout.Hide();
                 baudCombox.IsEnabled = false;
                 ListenSerial();
-            }
-            catch (Exception ex1)
-            {
+            } catch (Exception ex1) {
                 status.Text = ex1.Message;
                 comPortInput.IsEnabled = true;
             }
@@ -288,28 +276,23 @@ namespace SerialWS
         /// WriteAsync: Task that asynchronously writes data from the input text box 'sendText' to the OutputStream 
         /// </summary>
         /// <returns></returns>
-        private async Task WriteAsync(byte[] text)
-        {
+        private async Task WriteAsync(byte[] text) {
             Task<UInt32> storeAsyncTask;
             byte a, b;
             byte[] c = new byte[2];
 
-            try
-            {
+            try {
                 b = (byte)int.Parse(senderAdd.Text, System.Globalization.NumberStyles.HexNumber);
                 a = (byte)int.Parse(receiverAdd.Text, System.Globalization.NumberStyles.HexNumber);
                 c[0] = (byte)int.Parse(CommandCode.Text, System.Globalization.NumberStyles.HexNumber);
                 c[1] = (byte)int.Parse(SubCommandCode.Text, System.Globalization.NumberStyles.HexNumber);
-            }
-            catch (FormatException)
-            {
+            } catch (FormatException) {
                 status.Text = "Wrong sender/receiver address or command code";
                 return;
             }
             List<byte[]> toSend = Utils.formPackets(text, b, a, c);
 
-            foreach (byte[] packet in toSend)
-            {
+            foreach (byte[] packet in toSend) {
                 // Load the text from the sendText input text box to the dataWriter object
                 //dataWriteObject.WriteString(text);
                 dataWriteObject.WriteBytes(packet);
@@ -318,8 +301,7 @@ namespace SerialWS
                 storeAsyncTask = dataWriteObject.StoreAsync().AsTask();
 
                 UInt32 bytesWritten = await storeAsyncTask;
-                if (bytesWritten > 0)
-                {
+                if (bytesWritten > 0) {
                     status.Text = bytesWritten + " bytes written successfully!";
                 }
             }
@@ -357,8 +339,7 @@ namespace SerialWS
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void ListenSerial()
-        {
+        private async void ListenSerial() {
             try {
                 if (serialPort != null) {
                     dataReaderObject = new DataReader(serialPort.InputStream);
@@ -370,24 +351,16 @@ namespace SerialWS
                         await ReadAsync(ReadCancellationTokenSource.Token);
                     }
                 }
-            }
-            catch (Exception ex1)
-            {
-                if (ex1.GetType().Name == "TaskCanceledException")
-                {
+            } catch (Exception ex1) {
+                if (ex1.GetType().Name == "TaskCanceledException") {
                     status.Text = "Reading task was cancelled, closing device and cleaning up";
                     CloseDevice();
-                }
-                else
-                {
+                } else {
                     status.Text = ex1.Message;
                 }
-            }
-            finally
-            {
+            } finally {
                 // Cleanup once complete
-                if (dataReaderObject != null)
-                {
+                if (dataReaderObject != null) {
                     dataReaderObject.DetachStream();
                     dataReaderObject = null;
                 }
@@ -399,8 +372,7 @@ namespace SerialWS
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task ReadAsync(CancellationToken cancellationToken)
-        {
+        private async Task ReadAsync(CancellationToken cancellationToken) {
             Task<UInt32> loadAsyncTask;
             uint ReadBufferLength = 4096;
 
@@ -415,8 +387,7 @@ namespace SerialWS
 
             // Launch the task and wait
             UInt32 bytesRead = await loadAsyncTask;
-            if (bytesRead > 0)
-            {
+            if (bytesRead > 0) {
                 lastReceivedBytes = new byte[bytesRead];
                 dataReaderObject.ReadBytes(lastReceivedBytes);
                 string res;
@@ -437,12 +408,9 @@ namespace SerialWS
         /// CancelReadTask:
         /// - Uses the ReadCancellationTokenSource to cancel read operations
         /// </summary>
-        private void CancelReadTask()
-        {
-            if (ReadCancellationTokenSource != null)
-            {
-                if (!ReadCancellationTokenSource.IsCancellationRequested)
-                {
+        private void CancelReadTask() {
+            if (ReadCancellationTokenSource != null) {
+                if (!ReadCancellationTokenSource.IsCancellationRequested) {
                     ReadCancellationTokenSource.Cancel();
                 }
             }
@@ -453,10 +421,8 @@ namespace SerialWS
         /// - Disposes SerialDevice object
         /// - Clears the enumerated device Id list
         /// </summary>
-        private void CloseDevice()
-        {
-            if (serialPort != null)
-            {
+        private void CloseDevice() {
+            if (serialPort != null) {
                 serialPort.Dispose();
             }
             serialPort = null;
@@ -474,29 +440,23 @@ namespace SerialWS
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void closeDevice_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
+        private void closeDevice_Click(object sender, RoutedEventArgs e) {
+            try {
                 status.Text = "";
                 baudCombox.IsEnabled = true;
                 CancelReadTask();
                 CloseDevice();
                 ListAvailablePorts();
-            }
-            catch (Exception ex1)
-            {
+            } catch (Exception ex1) {
                 status.Text = ex1.Message;
             }
         }
 
-        private void comPortRefresh_Click(object sender, RoutedEventArgs e)
-        {
+        private void comPortRefresh_Click(object sender, RoutedEventArgs e) {
             ListAvailablePorts();
         }
 
-        private async void selectFileButton_Click(object sender, RoutedEventArgs e)
-        {
+        private async void selectFileButton_Click(object sender, RoutedEventArgs e) {
             status.Text = "Select a file";
             FileOpenPicker openPicker = new FileOpenPicker();
             openPicker.ViewMode = PickerViewMode.Thumbnail;
@@ -504,8 +464,7 @@ namespace SerialWS
             openPicker.FileTypeFilter.Add("*");
             StorageFile file = await openPicker.PickSingleFileAsync();
 
-            if (file != null)
-            {
+            if (file != null) {
                 // Application now has read/write access to the picked file
                 status.Text = "Selected " + file.Name;
                 ViewModel.SelectedFileName = "Loaded " + file.Name;
@@ -518,8 +477,7 @@ namespace SerialWS
         }
 
 
-        private async void savePacketButton_Click(object sender, RoutedEventArgs e)
-        {
+        private async void savePacketButton_Click(object sender, RoutedEventArgs e) {
             var savePicker = new FileSavePicker();
             var packets = receivedPacketsView.SelectedItems;
             savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
@@ -529,8 +487,7 @@ namespace SerialWS
             savePicker.SuggestedFileName = "Packet" + receivedPacketsView.SelectedIndex;
 
             StorageFile file = await savePicker.PickSaveFileAsync();
-            if (file != null)
-            {
+            if (file != null) {
                 // Prevent updates to the remote version of the file until
                 // we finish making changes and call CompleteUpdatesAsync.
                 CachedFileManager.DeferUpdates(file);
@@ -554,17 +511,12 @@ namespace SerialWS
                 // Completing updates may require Windows to ask for user input.
                 Windows.Storage.Provider.FileUpdateStatus res =
                     await CachedFileManager.CompleteUpdatesAsync(file);
-                if (res == Windows.Storage.Provider.FileUpdateStatus.Complete)
-                {
+                if (res == Windows.Storage.Provider.FileUpdateStatus.Complete) {
                     status.Text = "File " + file.Name + " was saved.";
-                }
-                else
-                {
+                } else {
                     status.Text = "File " + file.Name + " couldn't be saved.";
                 }
-            }
-            else
-            {
+            } else {
                 status.Text = "Operation cancelled.";
             }
         }
@@ -590,7 +542,7 @@ namespace SerialWS
                 savePacketButton.IsEnabled = false;
         }
 
-        private async void writeTextButton_Click(object sender, RoutedEventArgs e) {
+        private void writeTextButton_Click(object sender, RoutedEventArgs e) {
             if (serialPort != null) {
                 sendTextUART();
             } else if (clientSocket != null) {
