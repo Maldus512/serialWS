@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
+using Windows.System.Threading;
 
 namespace  PacketManagement//SerialWS
 {
@@ -32,7 +32,7 @@ namespace  PacketManagement//SerialWS
         public List<Tuple<UInt16, string>> CommandNames;
 
         //True if we are currently reading a packat
-        private bool evaluating;
+        public bool evaluating;
         //Buffer in which we are storing the packet
         private byte[] UARTBuffer;
         //Current state of reading the packet
@@ -40,8 +40,23 @@ namespace  PacketManagement//SerialWS
         //Packet length, read from the fifth and sixth byte
         private int expectedLen;
 
-        private Int64 timeout;
+        private Int64 timeoutCounter;
         public IAckCallback callback;
+
+        private Int64 _TIMEOUT = 100;
+
+        public Int64 TIMEOUT {
+            get {
+                return TIMEOUT;
+            }
+            set {
+                if (checkTimeout != null) {
+                    checkTimeout.Cancel();
+                    checkTimeout = null;
+                }
+                _TIMEOUT = value;
+            }
+        }
 
         public PacketManager(List<Tuple<UInt16, string>> comms)
         {
@@ -66,37 +81,72 @@ namespace  PacketManagement//SerialWS
             return res;
         }
 
-        public void evalNewData(byte[] data)
-        {
+        private ThreadPoolTimer checkTimeout = null;
+        private bool alive = false;
+
+
+        public uint remaining () {
+            if (!evaluating) {
+                return 0;
+            }
+
+            return (uint)expectedLen - (uint)ReadIndex;
+        }
+
+        public void reset() {
+            evaluating = false;
+            if (checkTimeout != null)
+                checkTimeout.Cancel();
+            checkTimeout = null;
+            ReadIndex = 0;
+            expectedLen = 0;
+        }
+
+        public bool evalNewData(byte[] data) {
             int i = 0;
             Packet packet;
-            Int64 now = Stopwatch.GetTimestamp();
 
-            if (timeout != 0 && now - timeout > 100) {
-                evaluating = false;
+            TimeSpan period = TimeSpan.FromMilliseconds(_TIMEOUT);
+            alive = true;
+
+            if (checkTimeout == null) {
+                checkTimeout = ThreadPoolTimer.CreatePeriodicTimer((source) => {
+                    if (alive) {
+                        alive = false;
+                    } else {
+                        evaluating = false;
+                    }
+                }, period);
             }
 
             //if the remaining part of the packet we are expecting is all in the current buffer
-            if (evaluating && expectedLen > ReadIndex + data.Length ) {
+            if (evaluating && expectedLen >= ReadIndex + data.Length ) {
                 Array.Copy(data, 0, UARTBuffer, ReadIndex, data.Length);
                 ReadIndex += data.Length;
-                packet = validatePacket(UARTBuffer);
-                if (packet != null) {
-                    receivedPackets.Insert(0, packet);
-                    if (Regex.IsMatch(packet.command.Name.ToUpper(), @"ACK") && 
-                        !Regex.IsMatch(packet.command.Name.ToUpper(), @"NACK")) {
-                        callback.OnAck();
+                if (ReadIndex == expectedLen) {
+                    packet = validatePacket(UARTBuffer);
+                    evaluating = false;
+                    if (packet != null) {
+                        receivedPackets.Insert(0, packet);
+                        if (Regex.IsMatch(packet.command.Name.ToUpper(), @"ACK") &&
+                            !Regex.IsMatch(packet.command.Name.ToUpper(), @"NACK")) {
+                            callback.OnAck();
+                        } else {
+                            callback.OnNack(packet.command.Name);
+                        }
+                        reset();
+                        return evaluating; //return true;
                     } else {
-                        callback.OnNack(packet.command.Name);
+                        reset();
+                        return evaluating;//return false;
                     }
+                } else {
+                    return evaluating;//return false;
                 }
-                return;
             }
 
-            while (i < data.Length)
-            {
+            while (i < data.Length) {
                 if (!evaluating && data[i] == Constants.SOH && data.Length >= i + 12) {
-                    timeout = Stopwatch.GetTimestamp();
                     evaluating = true;
                     ReadIndex = 0;
                     expectedLen = (ushort)(data[i + 5] << 8 | data[i + 6]) + 12;
@@ -104,9 +154,12 @@ namespace  PacketManagement//SerialWS
                 }
 
                 if (evaluating && data.Length >= i + (expectedLen - ReadIndex)) {
-                    Array.Copy(data, i, UARTBuffer, 0, expectedLen);
+                    bool b = false;
+                    Array.Copy(data, i, UARTBuffer, 0, data.Length - i);
                     packet = validatePacket(UARTBuffer);
+                    evaluating = false;
                     if (packet != null) {
+                        b = true;
                         receivedPackets.Insert(0, packet);
                         if (Regex.IsMatch(packet.command.Name.ToUpper(), @"ACK") && 
                             !Regex.IsMatch(packet.command.Name.ToUpper(), @"NACK")) {
@@ -116,18 +169,18 @@ namespace  PacketManagement//SerialWS
                         }
                     }
                     i += expectedLen - ReadIndex;
-                    evaluating = false;
-                    ReadIndex = 0;
-                    expectedLen = 0;
+                    reset();
+                    return evaluating;// return b;
                 }
                 else if (evaluating) {
-                    Array.Copy(data, i, UARTBuffer, 0, data.Length);
+                    Array.Copy(data, i, UARTBuffer, 0, data.Length - i);
                     ReadIndex += data.Length;
                     break;
                 } else {
                     i++;
                 }
             }
+            return evaluating;// return false;
         }
 
 

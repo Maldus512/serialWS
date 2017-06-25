@@ -23,6 +23,7 @@ using Windows.UI.Text;
 using System.Text;
 using System.IO;
 using Windows.Networking.Sockets;
+using Windows.System.Threading;
 
 namespace SerialWS
 {
@@ -31,6 +32,7 @@ namespace SerialWS
     {
         private string selectedFileName;
         private string status;
+        private int rxOrTxOption;
         private ObservableCollection<Command> listOfCommands;
 
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
@@ -58,15 +60,24 @@ namespace SerialWS
             }
         }
 
-        public string SelectedFileName
-        {
+        public string SelectedFileName {
             get { return this.selectedFileName; }
-            set
-            {
+            set {
                 this.selectedFileName = value;
                 this.OnPropertyChanged("SelectedFileName");
             }
         }
+
+        public int RxOrTxOption {
+            get { return this.rxOrTxOption; }
+            set {
+                this.rxOrTxOption = value;
+                this.OnPropertyChanged("RxOrTxOption");
+            }
+        }
+
+
+
 
         public string StatusString {
             get { return this.status; }
@@ -93,7 +104,7 @@ namespace SerialWS
         private SerialDevice serialPort = null;
         DataWriter dataWriteObject = null;
         DataReader dataReaderObject = null;
-        static Array baudRate = new uint[] { 4800, 7200, 9600, 56000, 76800, 115200 };
+        static Array baudRate = new uint[] { 4800, 7200, 9600, 19200, 28800, 38400, 56000, 57600, 76800, 115200 };
 
         private StreamSocket clientSocket = null;
 
@@ -303,6 +314,12 @@ namespace SerialWS
                 UInt32 bytesWritten = await storeAsyncTask;
                 if (bytesWritten > 0) {
                     status.Text = bytesWritten + " bytes written successfully!";
+
+                    if (ViewModel.RxOrTxOption == 1) {
+                        rcvdText.Text = BitConverter.ToString(packet);
+                    } else {
+                        rcvdText.Text = "";
+                    }
                 }
             }
         }
@@ -322,13 +339,19 @@ namespace SerialWS
                 //For the echo server/client application we will use a random port 1337.
                 await clientSocket.ConnectAsync(serverHost, port);
 
+                status.Text = "Socket succesfully connected!";
+
                 dataReaderObject = new DataReader(clientSocket.InputStream);
+//                ReadCancellationTokenSource.CancelAfter(2000);
+
+                pMan.TIMEOUT = 1000;
 
                 while (true) {
                     await ReadAsync(ReadCancellationTokenSource.Token);
                 }
             } catch (Exception ex1) {
-                status.Text = ex1.Message;
+                //status.Text = ex1.Message;
+                 //   CloseDevice();
             }
         }
 
@@ -344,8 +367,7 @@ namespace SerialWS
                 if (serialPort != null) {
                     dataReaderObject = new DataReader(serialPort.InputStream);
 
-                    //readBuffer = new byte[4096];
-
+                    pMan.TIMEOUT = 1000;
                     // keep reading the serial input
                     while (true) {
                         await ReadAsync(ReadCancellationTokenSource.Token);
@@ -367,6 +389,9 @@ namespace SerialWS
             }
         }
 
+
+        private ThreadPoolTimer checkTimeout = null;
+
         /// <summary>
         /// ReadAsync: Task that waits on data and reads asynchronously from the serial device InputStream
         /// </summary>
@@ -375,33 +400,68 @@ namespace SerialWS
         private async Task ReadAsync(CancellationToken cancellationToken) {
             Task<UInt32> loadAsyncTask;
             uint ReadBufferLength = 4096;
+            uint ReadBufferLengthInitial = 12;
+
+            byte[] initialBuf = new byte[ReadBufferLengthInitial];
 
             // If task cancellation was requested, comply
             cancellationToken.ThrowIfCancellationRequested();
 
             // Set InputStreamOptions to complete the asynchronous read operation when one or more bytes is available
-            dataReaderObject.InputStreamOptions = InputStreamOptions.Partial;
+            dataReaderObject.InputStreamOptions = InputStreamOptions.None;
 
             // Create a task object to wait for data on the serialPort.InputStream
-            loadAsyncTask = dataReaderObject.LoadAsync(ReadBufferLength).AsTask(cancellationToken);
+            loadAsyncTask = dataReaderObject.LoadAsync(ReadBufferLengthInitial).AsTask(cancellationToken);
 
-            // Launch the task and wait
-            UInt32 bytesRead = await loadAsyncTask;
-            if (bytesRead > 0) {
-                lastReceivedBytes = new byte[bytesRead];
-                dataReaderObject.ReadBytes(lastReceivedBytes);
-                string res;
-                //if (encodingCombox.SelectedIndex == 0){
-                    res = BitConverter.ToString(lastReceivedBytes);
-                /*} else {
-                    res = System.Text.Encoding.ASCII.GetString(lastReceivedBytes);
+            UInt32 bytesRead;
+            string res, firstRes;
+            res = "";
+            firstRes = "";
+            UInt32 bytesReadCount = 0;
+
+            bytesRead = await loadAsyncTask;
+
+            lastReceivedBytes = new byte[bytesRead];
+            dataReaderObject.ReadBytes(lastReceivedBytes);
+            bytesReadCount = bytesRead;
+
+            bytesRead = 0;
+
+            firstRes = BitConverter.ToString(lastReceivedBytes);
+
+            pMan.evalNewData(lastReceivedBytes);
+            uint remaining = pMan.remaining();
+
+            dataReaderObject.InputStreamOptions = InputStreamOptions.Partial;
+
+            while (remaining > 0) {
+                //await Task.Delay(100);
+                loadAsyncTask = dataReaderObject.LoadAsync(remaining).AsTask(cancellationToken);
+                bytesRead = await loadAsyncTask;
+
+                /*if (bytesRead != remaining) {
+                    byte[] flush = new byte[dataReaderObject.UnconsumedBufferLength];
+                    dataReaderObject.ReadBytes(flush);
+                    status.Text = "Timeout after header";
+                    pMan.reset();
+                    return;
                 }*/
-                rcvdText.Text = res;
-                status.Text = bytesRead + " bytes read successfully!";
 
-                //packet = pMan.validatePacket(text);
-                pMan.evalNewData(lastReceivedBytes);
+                byte[] buf = new byte[bytesRead];
+                dataReaderObject.ReadBytes(buf);
+                bytesReadCount += bytesRead;
+                res = BitConverter.ToString(buf);
+
+                pMan.evalNewData(buf);
+                remaining = pMan.remaining();
             }
+            
+            pMan.reset();
+
+            if (ViewModel.RxOrTxOption == 0) {
+                rcvdText.Text = firstRes + res;
+            } 
+            status.Text = (bytesReadCount) + " bytes read successfully!";
         }
 
         /// <summary>
@@ -424,8 +484,11 @@ namespace SerialWS
         private void CloseDevice() {
             if (serialPort != null) {
                 serialPort.Dispose();
+                serialPort = null;
+            } else if (clientSocket != null) {
+                clientSocket.Dispose();
+                clientSocket = null;
             }
-            serialPort = null;
 
             comPortInput.IsEnabled = true;
             rcvdText.Text = "";
@@ -499,7 +562,7 @@ namespace SerialWS
                             int padding = Constants.PAYLOADLEN - packet.payload.Length;
                             byte[] nullPadding = new byte[padding];
                             dataWriter.WriteBytes(packet.payload);
-                            dataWriter.WriteBytes(nullPadding);
+                            //dataWriter.WriteBytes(nullPadding);
                         }
                         await dataWriter.StoreAsync();
                         await outputStream.FlushAsync();
@@ -544,49 +607,42 @@ namespace SerialWS
 
         private void writeTextButton_Click(object sender, RoutedEventArgs e) {
             if (serialPort != null) {
-                sendTextUART();
+                dataWriteObject = new DataWriter(serialPort.OutputStream);
             } else if (clientSocket != null) {
-                sendTextSock();
+                dataWriteObject = new DataWriter(clientSocket.OutputStream);
+            } else {
+                status.Text = "Select a device and connect";
+                return;
             }
+            SendText();
         }
 
 
-        private async void sendTextUART() { 
+        private async void SendText() { 
             try {
-                if (serialPort != null) {
-                    // Create the DataWriter object and attach to OutputStream
-                    dataWriteObject = new DataWriter(serialPort.OutputStream);
-                    string text = ViewModel.TextToSend;
-                    int repeat = 1;
-                    byte[] payload;
+                // Create the DataWriter object and attach to OutputStream
+                string text = ViewModel.TextToSend;
+                int repeat = 1;
+                byte[] payload;
 
-                    if (!(bool)AsciiCheckBox.IsChecked) {
-                        text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
+                if (!(bool)AsciiCheckBox.IsChecked) {
+                    text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
 
-                        //Launch the WriteAsync task to perform the write
-                        if (text.Length % 2 != 0) {
-                            status.Text = "Invalid hexadecimal payload";
-                            return;
-                        }
-                        payload = Utils.StringToByteArray(text);
-                    } else {
-                        payload = Encoding.ASCII.GetBytes(text);
+                    //Launch the WriteAsync task to perform the write
+                    if (text.Length % 2 != 0) {
+                        status.Text = "Invalid hexadecimal payload";
+                        return;
                     }
-                    
-                    for (int i = 0; i < repeat; i++) 
-                        await WriteAsync(payload);
+                    payload = Utils.StringToByteArray(text);
+                } else {
+                    payload = Encoding.ASCII.GetBytes(text);
                 }
-                else
-                {
-                    status.Text = "Select a device and connect";
-                }
-            }
-            catch (Exception ex1)
-            {
+                
+                for (int i = 0; i < repeat; i++) 
+                    await WriteAsync(payload);
+            } catch (Exception ex1) {
                 status.Text = "writeTextButton_Click: " + ex1.Message;
-            }
-            finally
-            {
+            } finally {
                 // Cleanup once complete
                 if (dataWriteObject != null)
                 {
@@ -596,45 +652,6 @@ namespace SerialWS
             }
         }
 
-
-
-        private async void sendTextSock() {
-            try {
-                if (clientSocket != null) {
-                    // Create the DataWriter object and attach to OutputStream
-                    dataWriteObject = new DataWriter(clientSocket.OutputStream);
-                    string text = ViewModel.TextToSend;
-                    int repeat = 1;
-                    byte[] payload;
-
-                    if (!(bool)AsciiCheckBox.IsChecked) {
-                        text = Regex.Replace(text, "[^0-9a-fA-F]+", "");
-
-                        //Launch the WriteAsync task to perform the write
-                        if (text.Length % 2 != 0) {
-                            status.Text = "Invalid hexadecimal payload";
-                            return;
-                        }
-                        payload = Utils.StringToByteArray(text);
-                    } else {
-                        payload = Encoding.ASCII.GetBytes(text);
-                    }
-
-                    for (int i = 0; i < repeat; i++)
-                        await WriteAsync(payload);
-                } else {
-                    status.Text = "Select a device and connect";
-                }
-            } catch (Exception ex1) {
-                status.Text = "writeTextButton_Click: " + ex1.Message;
-            } finally {
-                // Cleanup once complete
-                if (dataWriteObject != null) {
-                    dataWriteObject.DetachStream();
-                    dataWriteObject = null;
-                }
-            }
-        }
 
         private void baudCombox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
            ApplicationDataCompositeValue composite = (ApplicationDataCompositeValue)localSettings.Values[Constants.SETTINGSKEY];
@@ -682,7 +699,7 @@ namespace SerialWS
                 ViewModel.ListOfCommands.Add(new Command(entry.Item2, entry.Item1));
             }
             //TODO: Prova a mettere questa roba nella classe HostViewModel, con notifica automatica dei cambiamenti
-            //commandCombox.ItemsSource = ViewModel.ListOfCommands;
+            commandCombox.ItemsSource = ViewModel.ListOfCommands;
             if (ViewModel.ListOfCommands.Count > 0) {
                 commandCombox.SelectedIndex = 0;
             }
@@ -729,8 +746,7 @@ namespace SerialWS
             openPicker.FileTypeFilter.Add(".csv");
             StorageFile file = await openPicker.PickSingleFileAsync();
 
-            if (file != null)
-            {
+            if (file != null) {
                 // Application now has read/write access to the picked file
                 string text = await FileIO.ReadTextAsync(file);
                 try {
@@ -767,20 +783,6 @@ namespace SerialWS
                 pMan.ClearHistory();
             }
         }
-
-/*        private void AdvancedCommandButton_Loaded(object sender, RoutedEventArgs e) {
-            bool allowFocusOnInteractionAvailable =
-                Windows.Foundation.Metadata.ApiInformation.IsPropertyPresent(
-                    "Windows.UI.Xaml.FrameworkElement",
-                    "AllowFocusOnInteraction");
-
-            if (allowFocusOnInteractionAvailable) {
-                var s = sender as FrameworkElement;
-                if (s != null) {
-                    s.AllowFocusOnInteraction = true;
-                }
-            }
-        }*/
 
         private async void SendFileSection() {
             var stream = await SelectedFile.OpenAsync(FileAccessMode.Read);
@@ -907,7 +909,7 @@ namespace SerialWS
 
 
             try {
-                status.Text = "Serial port configured successfully: ";
+                status.Text = "Waiting for network...";
                 // Set the RcvdText field to invoke the TextChanged callback
                 // The callback launches an async Read task to wait for data
                 rcvdText.Text = "Waiting for data...";
@@ -926,8 +928,14 @@ namespace SerialWS
         }
 
         private void closeSock_Click(object sender, RoutedEventArgs e) {
-            clientSocket.Dispose();
+            CancelReadTask();
+            if (clientSocket != null)
+                clientSocket.Dispose();
             clientSocket = null;
+        }
+
+        private void writeTextButton_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e) {
+
         }
     }
 }
