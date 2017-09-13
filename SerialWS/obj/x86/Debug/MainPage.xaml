@@ -1,0 +1,323 @@
+﻿<!-- Copyright (c) Microsoft. All rights reserved. -->
+
+<Page x:ConnectionId='1'
+    x:Class="SerialWS.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:SerialWS"
+        xmlns:Interactivity="using:Microsoft.Xaml.Interactivity" 
+    xmlns:Interactions="using:Microsoft.Xaml.Interactions.Core"
+    xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"  FontFamily="Consolas">
+
+    <Page.Resources>
+        <CollectionViewSource x:ConnectionId='2' x:Name="DeviceListSource"/>
+        <CollectionViewSource x:ConnectionId='3' x:Name="baudRateSource"/>
+
+        <SolidColorBrush x:Key="GrayColor" Color="#969696" />
+        <SolidColorBrush x:Key="WhiteColor" Color="White" />
+
+        <Style TargetType="Button" x:Key="ButtonStyle">
+            <Setter Property="Foreground" Value="Navy"/>
+            <Setter Property="Margin" Value="10,0,10,0"/>
+        </Style>
+                <Style TargetType="TextBox" x:Key="TextBlockStyle">
+                    <Setter Property="Foreground" Value="Navy"/>
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Width" Value="10"/>
+                    <Setter Property="MaxLength" Value="2"/>
+                    <Setter Property="Margin" Value="0,0,10,0"/>
+                    <Setter Property="Text" Value="00"/>
+                </Style>
+
+    </Page.Resources>
+
+    <Page.TopAppBar>
+        <CommandBar>
+            <AppBarButton x:ConnectionId='4' Name="ConfigButton" Icon="OpenFile" Label="Load config file"                           />
+            <AppBarButton x:ConnectionId='5' Name="SendAllButton" Icon="Download" Label="Send all programs"                            >
+            </AppBarButton>
+        </CommandBar>
+    </Page.TopAppBar>
+
+
+    <ScrollViewer VerticalScrollBarVisibility="auto" HorizontalScrollBarVisibility="Auto">
+
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="20,0,20,0" Width="1077">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 9 rows -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!--ROW I -->
+            <!-- Title -->
+            <TextBlock x:ConnectionId='6' Grid.Row="0" Grid.Column="0" x:Name="pageTitle" Text="WS2016 UART Communication" Style="{StaticResource HeaderTextBlockStyle}" 
+                        IsHitTestVisible="false" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,10,0,0"></TextBlock>
+
+            <!-- List of connected devices -->
+            <Button Grid.Row="0" Grid.Column="1" Content="Select device" HorizontalAlignment="Right">
+                <Button.Flyout>
+                    <Flyout x:ConnectionId='29' x:Name="ConnectDeviceFlyout" Placement="Left">
+
+                        <StackPanel Orientation="Vertical" Width="400">
+                            <ComboBox x:ConnectionId='30' Margin="0,10,0,10" Name="SerialSockCombobox" 
+                                                                                            >
+                                <ComboBoxItem x:ConnectionId='42' Name="serial" IsSelected="True">Serial port</ComboBoxItem>
+                                <ComboBoxItem x:ConnectionId='43' Name="socket">Socket</ComboBoxItem>
+                            </ComboBox>
+
+                            <StackPanel x:ConnectionId='31' Orientation="Vertical" Name="serialStackPanel">
+                                <ListBox x:ConnectionId='37' x:Name="ConnectDevices" ScrollViewer.HorizontalScrollMode="Enabled" 
+                                             ScrollViewer.HorizontalScrollBarVisibility="Visible" 
+                                             ItemsSource="{Binding Source={StaticResource DeviceListSource}}" 
+                                             Width="400" Height="80" Background="Gray">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <ComboBox x:ConnectionId='38' x:Name="baudCombox" ItemsSource="{Binding Source={StaticResource baudRateSource}}" 
+                                  Margin="10,0,10,0"                                               >
+                                    </ComboBox>
+                                    <Button x:ConnectionId='39' Name="comPortInput" Content="Connect"                            Style="{StaticResource ButtonStyle}"/>
+                                    <Button x:ConnectionId='40' Name="closeDevice" Content="Disconnect"                           Style="{StaticResource ButtonStyle}"/>
+                                    <Button x:ConnectionId='41' Name="comPortRefresh"                              Style="{StaticResource ButtonStyle}">
+                                        <Image Source="Assets/refresh.png" Height="20" Width="20"/>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:ConnectionId='32' Orientation="Vertical" Name="socketStackPanel" Visibility="Collapsed">
+                                <Grid Width="400">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"></ColumnDefinition>
+                                        <ColumnDefinition Width="7*"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"></RowDefinition>
+                                        <RowDefinition Height="auto"></RowDefinition>
+                                        <RowDefinition Height="auto"></RowDefinition>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="0"  VerticalAlignment="Center">Address:</TextBlock>
+                                    <TextBox x:ConnectionId='33' HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="0" VerticalAlignment="Center"
+                                         Name="ipAddrTextBox" Margin="0,5,0,5"></TextBox>
+                                    <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center">Port:</TextBlock>
+                                    <TextBox x:ConnectionId='34' Grid.Column="1" Grid.Row="1"   VerticalAlignment="Center" 
+                                         Width="100" Name="portTextBox" Margin="0,5,0,5" HorizontalAlignment="Left"></TextBox>
+                                    <Button x:ConnectionId='35' Grid.Column="0" Grid.Row="2" Name="sockConnect"                           
+                                        Content="Connect" Style="{StaticResource ButtonStyle}"/>
+                                    <Button x:ConnectionId='36' Grid.Column="1" Grid.Row="2" Name="closeSock" Content="Disconnect"
+                                                                Style="{StaticResource ButtonStyle}"/>
+
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <!--ROW IV -->
+            <!-- Payload header -->
+            <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,10,0,0">
+                <TextBlock Text="Payload:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            </StackPanel>
+
+            <!--ROW V -->
+            <!-- Payload -->
+            <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical"
+                    Padding="50,0,50,0" Width="auto" Height="auto" HorizontalAlignment="Stretch">
+                <TextBox x:ConnectionId='25' Name="sendText" Width="500" Height="100" IsReadOnly="False"
+                     TextWrapping="Wrap"                                                                             >
+                </TextBox>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                        <ColumnDefinition Width="5*"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:ConnectionId='26' x:Name="AsciiCheckBox" Content="ASCII"                                                                    ></CheckBox>
+                    <TextBlock x:ConnectionId='27' Grid.Column="1" x:Name="writeFile" HorizontalAlignment="Right" Width="200"
+                               Margin="0,0,100,0" VerticalAlignment="Center"                                                        
+                                                                                                        >
+                    </TextBlock>
+                    <Button x:ConnectionId='28' Grid.Column="2" x:Name="selectFileButton" Content="Open File"                               />
+                </Grid>
+            </StackPanel>
+
+            <!-- Send buttons -->
+            <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Orientation="Vertical" Margin="10,0,10,0" Width="auto">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"></ColumnDefinition>
+                        <ColumnDefinition Width="auto"></ColumnDefinition>
+                        <ColumnDefinition Width="auto"></ColumnDefinition>
+                        <ColumnDefinition Width="auto"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                    </Grid.RowDefinitions>
+
+
+                    <ComboBox x:ConnectionId='19' Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Stretch" FontWeight="SemiBold"
+                          x:Name="commandCombox"                                                   Background="Gray" MaxWidth="357"
+                          ItemsSource="{Binding ViewModel.ListOfCommands}" FontFamily="Consolas"  DisplayMemberPath="Name" Margin="19,0,10,0">
+                    </ComboBox>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Sender" VerticalAlignment="Bottom"
+                           FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Receiver" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Code" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Subcode" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                        <TextBox x:ConnectionId='24' x:Name="CommandCode" Style="{StaticResource TextBlockStyle}"                                   
+                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.MainCode}" Width="120">
+                            <ToolTipService.Placement>Top</ToolTipService.Placement>
+                            <ToolTipService.ToolTip>
+                                <TextBlock Text="Main command code"/>
+                            </ToolTipService.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
+                        <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                        <TextBox x:ConnectionId='23' x:Name="SubCommandCode" Style="{StaticResource TextBlockStyle}"                                   
+                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.SubCode}" Width="120">
+                            <ToolTipService.Placement>Top</ToolTipService.Placement>
+                            <ToolTipService.ToolTip>
+                                <TextBlock Text="Sub command code"/>
+                            </ToolTipService.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                        <TextBox x:ConnectionId='22' x:Name="senderAdd"                                   Style="{StaticResource TextBlockStyle}" Width="65">
+                            <ToolTipService.Placement>
+                                <PlacementMode>Top</PlacementMode>
+                            </ToolTipService.Placement>
+                            <ToolTipService.ToolTip>
+                                <TextBlock Text="Sender address"/>
+                            </ToolTipService.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+                    <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock FontWeight="SemiBold" >0x</TextBlock>
+                        <TextBox x:ConnectionId='21' x:Name="receiverAdd"                                   Style="{StaticResource TextBlockStyle}" Width="65">
+                            <ToolTipService.Placement>Top</ToolTipService.Placement>
+                            <ToolTipService.ToolTip>
+                                <TextBlock Text="Receiver address"/>
+                            </ToolTipService.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+
+                    <!--<TextBox Grid.Column="1" Grid.Row="3" x:Name="numPacketsToSend"/>-->
+
+                    <Button x:ConnectionId='20' Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="10,10,10,0" HorizontalAlignment="Right"
+                        Content="Send Command" x:Name="writeTextButton"                                                                              />
+                </Grid>
+            </StackPanel>
+
+            <!--ROW VI -->
+            <StackPanel Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" Orientation="Horizontal" Margin="10,10,0,0">
+                <ComboBox x:ConnectionId='18' Name="rxOrTx"                                                              Width="160">
+                    <ComboBoxItem>Read data:</ComboBoxItem>
+                    <ComboBoxItem>Transmit data:</ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+
+            <!--ROW VII -->
+            <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Vertical" 
+                    HorizontalAlignment="Stretch" Padding="50,0,50,0">
+                <TextBox x:ConnectionId='17' Name="rcvdText" Width="500" Height="100" ScrollViewer.VerticalScrollBarVisibility="Auto" IsReadOnly="True" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <ScrollViewer Grid.Column="1" Grid.Row="4">
+                <TextBlock x:ConnectionId='16' Margin="30,0,10,0" x:Name="status" TextWrapping="Wrap" Width="300" MaxHeight="70" VerticalAlignment="Center" 
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+            </TextBlock>
+               </ScrollViewer>
+
+            <!--ROW VIII -->
+            <ListView x:ConnectionId='7' x:Name="receivedPacketsView" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                                                                          SelectionMode="Multiple" IsMultiSelectCheckBoxEnabled="True"
+                  Background="LightGray" HorizontalContentAlignment="Stretch" Height="250" Width="1000"
+                                                                          Margin="10,20,0,0"
+                   ScrollViewer.VerticalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Visible">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate xmlns:src="using:PacketManagement"                         >
+                        <Border x:ConnectionId='11' Padding="3" Margin="0,5,5,5" BorderBrush="DarkGray"  CornerRadius="8,8,3,3" BorderThickness="1,3,1, 3">
+                            <StackPanel  Orientation="Vertical" Margin="0,0,0,0" HorizontalAlignment="Stretch">
+                                <Grid HorizontalAlignment="Stretch">
+                                    <TextBlock x:ConnectionId='14' HorizontalAlignment="Right"                          />
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,100,0">
+                                        <TextBlock>Comando:</TextBlock>
+                                        <TextBlock x:ConnectionId='15' TextWrapping="Wrap"                             ></TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,10,0">Payload:</TextBlock>
+                                    <TextBlock x:ConnectionId='13' TextWrapping="Wrap"                            ></TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,10,0">Ascii:</TextBlock>
+                                    <TextBlock x:ConnectionId='12' TextWrapping="Wrap"                              ></TextBlock>
+                                </StackPanel>
+
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!--ROW IX -->
+            <Grid Grid.Row="6" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"></ColumnDefinition>
+                    <ColumnDefinition Width="auto"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="auto"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Button x:ConnectionId='8' Grid.Column="0" x:Name="clearListButton" Margin="10,0,10,0"
+                    Content="Clear All"                              ></Button>
+                <Button x:ConnectionId='9' Grid.Column="1" x:Name="selectAllButton" Margin="0,0,10,0"
+                    HorizontalAlignment="Right" Content="Select/Unselect All"                              ></Button>
+                <Button x:ConnectionId='10' Grid.Column="3" x:Name="savePacketButton" Margin="10,0,0,0"
+                    HorizontalAlignment="Right" Content="Save to file"                                IsEnabled="False"></Button>
+            </Grid>
+        </Grid>
+
+    </ScrollViewer>
+</Page>
+

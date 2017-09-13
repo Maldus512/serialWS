@@ -350,8 +350,8 @@ namespace SerialWS
                     await ReadAsync(ReadCancellationTokenSource.Token);
                 }
             } catch (Exception ex1) {
-                //status.Text = ex1.Message;
-                 //   CloseDevice();
+                status.Text = ex1.Message;
+                CloseDevice();
             }
         }
 
@@ -399,69 +399,33 @@ namespace SerialWS
         /// <returns></returns>
         private async Task ReadAsync(CancellationToken cancellationToken) {
             Task<UInt32> loadAsyncTask;
-            uint ReadBufferLength = 4096;
-            uint ReadBufferLengthInitial = 12;
-
+            uint ReadBufferLengthInitial = 4096;
             byte[] initialBuf = new byte[ReadBufferLengthInitial];
+            UInt32 bytesRead;
+            string firstRes;
+            firstRes = "";
 
             // If task cancellation was requested, comply
             cancellationToken.ThrowIfCancellationRequested();
-
-            // Set InputStreamOptions to complete the asynchronous read operation when one or more bytes is available
-            dataReaderObject.InputStreamOptions = InputStreamOptions.None;
+            dataReaderObject.InputStreamOptions = InputStreamOptions.Partial;
 
             // Create a task object to wait for data on the serialPort.InputStream
             loadAsyncTask = dataReaderObject.LoadAsync(ReadBufferLengthInitial).AsTask(cancellationToken);
-
-            UInt32 bytesRead;
-            string res, firstRes;
-            res = "";
-            firstRes = "";
-            UInt32 bytesReadCount = 0;
 
             bytesRead = await loadAsyncTask;
 
             lastReceivedBytes = new byte[bytesRead];
             dataReaderObject.ReadBytes(lastReceivedBytes);
-            bytesReadCount = bytesRead;
-
-            bytesRead = 0;
 
             firstRes = BitConverter.ToString(lastReceivedBytes);
 
             pMan.evalNewData(lastReceivedBytes);
             uint remaining = pMan.remaining();
 
-            dataReaderObject.InputStreamOptions = InputStreamOptions.Partial;
-
-            while (remaining > 0) {
-                //await Task.Delay(100);
-                loadAsyncTask = dataReaderObject.LoadAsync(remaining).AsTask(cancellationToken);
-                bytesRead = await loadAsyncTask;
-
-                /*if (bytesRead != remaining) {
-                    byte[] flush = new byte[dataReaderObject.UnconsumedBufferLength];
-                    dataReaderObject.ReadBytes(flush);
-                    status.Text = "Timeout after header";
-                    pMan.reset();
-                    return;
-                }*/
-
-                byte[] buf = new byte[bytesRead];
-                dataReaderObject.ReadBytes(buf);
-                bytesReadCount += bytesRead;
-                res = BitConverter.ToString(buf);
-
-                pMan.evalNewData(buf);
-                remaining = pMan.remaining();
-            }
-            
-            pMan.reset();
-
             if (ViewModel.RxOrTxOption == 0) {
-                rcvdText.Text = firstRes + res;
+                rcvdText.Text = firstRes;
             } 
-            status.Text = (bytesReadCount) + " bytes read successfully!";
+            status.Text = (bytesRead) + " bytes read successfully!";
         }
 
         /// <summary>

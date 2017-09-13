@@ -1,0 +1,9 @@
+﻿[ResourceMetadata]
+"ResourceId"			"split.scale-100"
+"ResourceDimensions"		"scale-100"
+
+[Files]
+"C:\Users\Maldus\Projects\serialWS\SerialWS\obj\x86\Debug\split.scale-100.pri"			"resources.pri"
+"C:\Users\Maldus\Projects\serialWS\SerialWS\obj\x86\Debug\PackageLayout\Assets\serial_150x150.scale-100.png"			"Assets\serial_150x150.scale-100.png"
+"C:\Users\Maldus\Projects\serialWS\SerialWS\obj\x86\Debug\PackageLayout\Assets\serial620x300.scale-100.png"			"Assets\serial620x300.scale-100.png"
+"C:\Users\Maldus\Projects\serialWS\SerialWS\obj\x86\Debug\PackageLayout\Assets\serial300x300.scale-100.png"			"Assets\serial300x300.scale-100.png"

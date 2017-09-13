@@ -31,7 +31,7 @@ namespace  PacketManagement//SerialWS
 
         public List<Tuple<UInt16, string>> CommandNames;
 
-        //True if we are currently reading a packat
+        //True if we are currently reading a packet
         public bool evaluating;
         //Buffer in which we are storing the packet
         private byte[] UARTBuffer;
@@ -102,9 +102,11 @@ namespace  PacketManagement//SerialWS
             expectedLen = 0;
         }
 
+        //Returns true if we correctly identified a packet AND QUIT, false otherwise
         public bool evalNewData(byte[] data) {
             int i = 0;
             Packet packet;
+            bool b = false;
 
             TimeSpan period = TimeSpan.FromMilliseconds(_TIMEOUT);
             alive = true;
@@ -115,47 +117,47 @@ namespace  PacketManagement//SerialWS
                         alive = false;
                     } else {
                         evaluating = false;
+                        reset();
                     }
                 }, period);
             }
 
-            //if the remaining part of the packet we are expecting is all in the current buffer
-            if (evaluating && expectedLen >= ReadIndex + data.Length ) {
-                Array.Copy(data, 0, UARTBuffer, ReadIndex, data.Length);
-                ReadIndex += data.Length;
-                if (ReadIndex == expectedLen) {
-                    packet = validatePacket(UARTBuffer);
-                    evaluating = false;
-                    if (packet != null) {
-                        receivedPackets.Insert(0, packet);
-                        if (Regex.IsMatch(packet.command.Name.ToUpper(), @"ACK") &&
-                            !Regex.IsMatch(packet.command.Name.ToUpper(), @"NACK")) {
-                            callback.OnAck();
-                        } else {
-                            callback.OnNack(packet.command.Name);
-                        }
-                        reset();
-                        return evaluating; //return true;
-                    } else {
-                        reset();
-                        return evaluating;//return false;
-                    }
-                } else {
-                    return evaluating;//return false;
-                }
-            }
-
+            //We are not evaluating and about to begin
             while (i < data.Length) {
-                if (!evaluating && data[i] == Constants.SOH && data.Length >= i + 12) {
+                if (ReadIndex == 0 && data[i] == Constants.SOH) {
                     evaluating = true;
-                    ReadIndex = 0;
-                    expectedLen = (ushort)(data[i + 5] << 8 | data[i + 6]) + 12;
+                    UARTBuffer = new byte[7];
+                    UARTBuffer[ReadIndex] = data[i];
+                    ReadIndex++;
+                    i++;
+                } else if (ReadIndex > 0 && ReadIndex <= 5) {
+                    UARTBuffer[ReadIndex] = data[i];
+                    ReadIndex++;
+                    i++;
+                } else if (ReadIndex == 6) {
+                    UARTBuffer[ReadIndex] = data[i];
+                    ReadIndex++;
+                    i++;
+                    expectedLen = (ushort)(UARTBuffer[5] << 8 | UARTBuffer[6]) + 12;
+                    byte[] tmp = new byte[7];
+                    Array.Copy(UARTBuffer, tmp, 7);
                     UARTBuffer = new byte[expectedLen];
+                    Array.Copy(tmp, UARTBuffer, 7);
+                } else if (ReadIndex < expectedLen) {
+                    int len = expectedLen - ReadIndex;
+                    len = len > data.Length - i ? data.Length - i : len;
+                    len = len > UARTBuffer.Length - ReadIndex ? UARTBuffer.Length - ReadIndex : len;
+                    Array.Copy(data, i, UARTBuffer, ReadIndex, len);
+                    ReadIndex+= len;
+                    i+= len;
+                } else if (ReadIndex > expectedLen){
+                    reset();
+                    return false;
+                } else {
+                    i++;
                 }
 
-                if (evaluating && data.Length >= i + (expectedLen - ReadIndex)) {
-                    bool b = false;
-                    Array.Copy(data, i, UARTBuffer, 0, data.Length - i);
+                if (ReadIndex == expectedLen) {
                     packet = validatePacket(UARTBuffer);
                     evaluating = false;
                     if (packet != null) {
@@ -168,19 +170,10 @@ namespace  PacketManagement//SerialWS
                             callback.OnNack(packet.command.Name);
                         }
                     }
-                    i += expectedLen - ReadIndex;
                     reset();
-                    return evaluating;// return b;
-                }
-                else if (evaluating) {
-                    Array.Copy(data, i, UARTBuffer, 0, data.Length - i);
-                    ReadIndex += data.Length;
-                    break;
-                } else {
-                    i++;
                 }
             }
-            return evaluating;// return false;
+            return b;// return b;
         }
 
 
