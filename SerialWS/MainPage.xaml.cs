@@ -24,6 +24,7 @@ using System.Text;
 using System.IO;
 using Windows.Networking.Sockets;
 using Windows.System.Threading;
+using Windows.ApplicationModel;
 
 namespace SerialWS
 {
@@ -134,6 +135,12 @@ namespace SerialWS
             ViewModel.TextToSend = "";
             oldText = "";
 
+            pageTitle.Text = string.Format("*WS Serial Communication {0}.{1}.{2}.{3}",
+                    Package.Current.Id.Version.Major,
+                    Package.Current.Id.Version.Minor,
+                    Package.Current.Id.Version.Build,
+                    Package.Current.Id.Version.Revision);
+
             comPortInput.IsEnabled = false;
 
             restoreSettings();
@@ -168,13 +175,23 @@ namespace SerialWS
 
             if (composite == null) {
                 composite = new ApplicationDataCompositeValue();
-                composite[Constants.COMMANDCHOICEKEY] = 0;
-                composite[Constants.SENDERKEY] = "00";
-                composite[Constants.RECEIVERKEY] = "00";
-                composite[Constants.BAUDKEY] = 0;
-                composite[Constants.IPADDR] = "";
-                composite[Constants.PORT] = "80";
             }
+            if (composite[Constants.COMMANDCHOICEKEY] == null)
+                composite[Constants.COMMANDCHOICEKEY] = 0;
+            if (composite[Constants.SENDERKEY] == null)
+                composite[Constants.SENDERKEY] = "00";
+            if (composite[Constants.RECEIVERKEY] == null)
+                composite[Constants.RECEIVERKEY] = "00";
+            if (composite[Constants.BAUDKEY] == null)
+                composite[Constants.BAUDKEY] = 0;
+            if (composite[Constants.IPADDR] == null)
+                composite[Constants.IPADDR] = "";
+            if (composite[Constants.PORT] == null)
+                composite[Constants.PORT] = "80";
+            if (composite[Constants.TESTDATECMD] == null)
+                composite[Constants.TESTDATECMD] = "0000";
+            if (composite[Constants.CHECKDATECMD] == null)
+                composite[Constants.CHECKDATECMD] = "0000";
 
             List<Tuple<UInt16, string>> commands = new List<Tuple<ushort, string>>();
             try {
@@ -195,6 +212,8 @@ namespace SerialWS
             receiverAdd.Text = (string)composite[Constants.RECEIVERKEY];
             ipAddrTextBox.Text = (string)composite[Constants.IPADDR];
             portTextBox.Text = (string)composite[Constants.PORT];
+            TestDateCommand.Text = (string)composite[Constants.TESTDATECMD];
+            CheckDateCommand.Text = (string)composite[Constants.CHECKDATECMD];
 
             localSettings.Values[Constants.SETTINGSKEY] = composite;
         }
@@ -288,20 +307,32 @@ namespace SerialWS
         /// </summary>
         /// <returns></returns>
         private async Task WriteAsync(byte[] text) {
-            Task<UInt32> storeAsyncTask;
-            byte a, b;
             byte[] c = new byte[2];
 
             try {
-                b = (byte)int.Parse(senderAdd.Text, System.Globalization.NumberStyles.HexNumber);
-                a = (byte)int.Parse(receiverAdd.Text, System.Globalization.NumberStyles.HexNumber);
                 c[0] = (byte)int.Parse(CommandCode.Text, System.Globalization.NumberStyles.HexNumber);
                 c[1] = (byte)int.Parse(SubCommandCode.Text, System.Globalization.NumberStyles.HexNumber);
             } catch (FormatException) {
-                status.Text = "Wrong sender/receiver address or command code";
+                status.Text = "Wrong command code";
                 return;
             }
-            List<byte[]> toSend = Utils.formPackets(text, b, a, c);
+            await WriteAsync(text, c);
+        }
+
+
+        private async Task WriteAsync(byte[] text, byte[] command) {
+            byte sender, receiver;
+            List<byte[]> toSend;
+            Task<UInt32> storeAsyncTask;
+            try {
+                sender = (byte)int.Parse(senderAdd.Text, System.Globalization.NumberStyles.HexNumber);
+                receiver = (byte)int.Parse(receiverAdd.Text, System.Globalization.NumberStyles.HexNumber);
+            } catch (FormatException) {
+                status.Text = "Wrong sender/receiver address";
+                return;
+            }
+
+            toSend = Utils.formPackets(text, sender, receiver, command);
 
             foreach (byte[] packet in toSend) {
                 // Load the text from the sendText input text box to the dataWriter object
@@ -322,9 +353,8 @@ namespace SerialWS
                     }
                 }
             }
+
         }
-
-
 
         private async void ListenSock(string dest, string port) {
             try {
@@ -419,7 +449,15 @@ namespace SerialWS
 
             firstRes = BitConverter.ToString(lastReceivedBytes);
 
-            pMan.evalNewData(lastReceivedBytes);
+            if (pMan.evalNewData(lastReceivedBytes)) {
+                /* Ho ricevuto un pacchetto corretto */
+                if (pMan.receivedPackets[0].command.Code == Constants.ACK) {
+
+                }
+                else if (false) {
+
+                }
+            }
             uint remaining = pMan.remaining();
 
             if (ViewModel.RxOrTxOption == 0) {
@@ -673,6 +711,10 @@ namespace SerialWS
         private void AddressHexValidation(object s, TextChangedEventArgs args) {
             TextBox sender = (TextBox)s;
             Command comm = (Command)commandCombox.SelectedItem;
+            int index = commandCombox.SelectedIndex;
+            int matchCounter = 0;
+            Command match = comm;
+
             if (!Regex.IsMatch(sender.Text, @"\A\b[0-9a-fA-F]+\b\Z") || sender.Text.Length > 2) {
                 int pos = sender.SelectionStart - 1;
                 if (pos < 0)
@@ -685,12 +727,27 @@ namespace SerialWS
             if (CommandCode.Text.Length == 2 && SubCommandCode.Text.Length == 2) {
                 foreach (Command c in ViewModel.ListOfCommands) {
                     if (c.MainCode == CommandCode.Text && c.SubCode == SubCommandCode.Text) {
-                        commandCombox.SelectedItem = c;
-                        commandCombox.Opacity = 1.0;
-                        commandCombox.FontWeight = FontWeights.SemiBold;
-                        return;
+                        match = c;
+                        matchCounter++;
                     }
                 }
+
+                if (matchCounter == 0) {
+                    commandCombox.Opacity = 0.7;
+                    commandCombox.FontWeight = FontWeights.Normal;
+                }
+                /* Se ho trovato un solo match seleziona quello */
+                if (matchCounter == 1) {
+                    commandCombox.SelectedItem = match;
+                    commandCombox.Opacity = 1.0;
+                    commandCombox.FontWeight = FontWeights.SemiBold;
+                }
+                /* Se ne ho trovato piu' di uno ma e' diverso da quello precedente segnala che non e' trovato */
+                else if (matchCounter > 1 && !(CommandCode.Text == comm.MainCode && SubCommandCode.Text == comm.SubCode)) {
+                    commandCombox.Opacity = 0.7;
+                    commandCombox.FontWeight = FontWeights.Normal;
+                }
+                /* In caso contrario ho sempre lo stesso elemento e non devo toglierlo */
             }
 
             if (comm != null) {
@@ -723,9 +780,7 @@ namespace SerialWS
 
                     return;
                 }
-           } else {
-                SetCommandList(new List<Tuple<ushort, string>>());
-            }
+           }
         }
 
         private async void clearListButton_Click(object sender, RoutedEventArgs e) {
@@ -898,8 +953,79 @@ namespace SerialWS
             clientSocket = null;
         }
 
-        private void writeTextButton_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e) {
+        private void writeTextButton_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e) { }
 
+        private void checkDateButton_Click(object sender, RoutedEventArgs e) {
+            ApplicationDataCompositeValue composite = (ApplicationDataCompositeValue)localSettings.Values[Constants.SETTINGSKEY];
+            byte[] c = new byte[2];
+            byte b;
+            DateTime now = DateTime.Now;
+
+            if (composite != null) {
+                composite[Constants.CHECKDATECMD] = CheckDateCommand.Text;
+                localSettings.Values[Constants.SETTINGSKEY] = composite;
+            }
+
+            try {
+                c = BitConverter.GetBytes(int.Parse(CheckDateCommand.Text, System.Globalization.NumberStyles.HexNumber));
+                b = c[0];
+                c[0] = c[1];
+                c[1] = b;
+            } catch (FormatException) {
+                status.Text = "Wrong command code";
+                return;
+            }
+
+            sendSerialNumber(c);
+        }
+
+        private void testDateButton_Click(object sender, RoutedEventArgs e) {
+            ApplicationDataCompositeValue composite = (ApplicationDataCompositeValue)localSettings.Values[Constants.SETTINGSKEY];
+            byte[] c = new byte[2];
+            byte b;
+
+            if (composite != null) {
+                composite[Constants.TESTDATECMD] = TestDateCommand.Text;
+                localSettings.Values[Constants.SETTINGSKEY] = composite;
+            }
+
+            try {
+                c = BitConverter.GetBytes(int.Parse(TestDateCommand.Text, System.Globalization.NumberStyles.HexNumber));
+                b = c[0];
+                c[0] = c[1];
+                c[1] = b;
+            } catch (FormatException) {
+                status.Text = "Wrong command code";
+                return;
+            }
+
+            sendSerialNumber(c);
+        }
+
+        private async void sendSerialNumber(byte[] c) { 
+            byte[] payload;
+            byte[][] timestamp = new byte[6][];
+            DateTime now = DateTime.Now;
+
+            if (serialPort != null) {
+                dataWriteObject = new DataWriter(serialPort.OutputStream);
+            } else if (clientSocket != null) {
+                dataWriteObject = new DataWriter(clientSocket.OutputStream);
+            } else {
+                status.Text = "Select a device and connect";
+                return;
+            }
+ 
+            timestamp[0] = Utils.IntToBCD(now.Hour);
+            timestamp[1] = Utils.IntToBCD(now.Minute);
+            timestamp[2] = Utils.IntToBCD(now.Second);
+            timestamp[3] = Utils.IntToBCD(now.Day);
+            timestamp[4] = Utils.IntToBCD(now.Month);
+            timestamp[5] = Utils.IntToBCD(now.Year);
+
+            payload = Utils.Combine(timestamp);
+            
+            await WriteAsync(payload, c);
         }
     }
 }

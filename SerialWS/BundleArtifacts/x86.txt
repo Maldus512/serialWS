@@ -1,3 +1,2 @@
-MainPackage=C:\Users\Maldus\Projects\serialWS\SerialWS\bin\x86\Debug\SerialWS_1.1.7.0_x86_Debug.appx
-SymbolPackage=C:\Users\Maldus\Projects\serialWS\SerialWS\AppPackages\SerialWS_1.1.7.0_Debug_Test\SerialWS_1.1.7.0_x86_Debug.appxsym
-ResourcePack=C:\Users\Maldus\Projects\serialWS\SerialWS\bin\x86\Debug\SerialWS_1.1.7.0_scale-100.appx
+MainPackage=C:\Users\Maldus\Projects\serialWS\SerialWS\bin\x86\Release\SerialWS_1.2.2.0_x86.appx
+SymbolPackage=C:\Users\Maldus\Projects\serialWS\SerialWS\AppPackages\SerialWS_1.2.2.0_Test\SerialWS_1.2.2.0_x86.appxsym

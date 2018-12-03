@@ -23,7 +23,7 @@
             <Setter Property="Foreground" Value="Navy"/>
             <Setter Property="Margin" Value="10,0,10,0"/>
         </Style>
-                <Style TargetType="TextBox" x:Key="TextBlockStyle">
+        <Style TargetType="TextBox" x:Key="TextBlockStyle">
                     <Setter Property="Foreground" Value="Navy"/>
                     <Setter Property="FontSize" Value="14"/>
                     <Setter Property="Width" Value="10"/>
@@ -31,292 +31,564 @@
                     <Setter Property="Margin" Value="0,0,10,0"/>
                     <Setter Property="Text" Value="00"/>
                 </Style>
+        <Style TargetType="TextBox" x:Key="DoubleTextBlockStyle">
+                    <Setter Property="Foreground" Value="Navy"/>
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Width" Value="10"/>
+                    <Setter Property="MaxLength" Value="4"/>
+                    <Setter Property="Margin" Value="0,0,0,0"/>
+                    <Setter Property="Text" Value="0000"/>
+                </Style>
+
+        <Style TargetType="Pivot">
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="{ThemeResource PivotBackground}"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <Grid/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Pivot">
+                        <Grid x:Name="RootElement" Background="{TemplateBinding Background}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
+                            <Grid.Resources>
+                                <Style x:Key="BaseContentControlStyle" TargetType="ContentControl">
+                                    <Setter Property="FontFamily" Value="XamlAutoFontFamily"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="10"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ContentControl">
+                                                <ContentPresenter ContentTemplate="{TemplateBinding ContentTemplate}" ContentTransitions="{TemplateBinding ContentTransitions}" Content="{TemplateBinding Content}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" OpticalMarginAlignment="TrimSideBearings" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                                <Style x:Key="TitleContentControlStyle" BasedOn="{StaticResource BaseContentControlStyle}" TargetType="ContentControl">
+                                    <Setter Property="FontFamily" Value="{ThemeResource PivotTitleFontFamily}"/>
+                                    <Setter Property="FontWeight" Value="{ThemeResource PivotTitleThemeFontWeight}"/>
+                                    <Setter Property="FontSize" Value="{ThemeResource PivotTitleFontSize}"/>
+                                </Style>
+                            </Grid.Resources>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="Orientation">
+                                    <VisualState x:Name="Portrait">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="TitleContentControl">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPortraitThemePadding}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Landscape">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="TitleContentControl">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotLandscapeThemePadding}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="NavigationButtonsVisibility">
+                                    <VisualState x:Name="NavigationButtonsHidden"/>
+                                    <VisualState x:Name="NavigationButtonsVisible">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Storyboard.TargetName="NextButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="1"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="IsEnabled" Storyboard.TargetName="NextButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="True"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Storyboard.TargetName="PreviousButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="1"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="IsEnabled" Storyboard.TargetName="PreviousButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="True"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="PreviousButtonVisible">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Storyboard.TargetName="PreviousButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="1"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="IsEnabled" Storyboard.TargetName="PreviousButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="True"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="NextButtonVisible">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Storyboard.TargetName="NextButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="1"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="IsEnabled" Storyboard.TargetName="NextButton">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="True"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="HeaderStates">
+                                    <VisualState x:Name="HeaderDynamic"/>
+                                    <VisualState x:Name="HeaderStatic">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Visibility" Storyboard.TargetName="Header">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="Collapsed"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Visibility" Storyboard.TargetName="StaticHeader">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="Visible"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentControl x:Name="TitleContentControl" ContentTemplate="{TemplateBinding TitleTemplate}" Content="{TemplateBinding Title}" IsTabStop="False" Margin="{StaticResource PivotPortraitThemePadding}" Style="{StaticResource TitleContentControlStyle}" Visibility="Collapsed"/>
+                            <Grid Grid.Row="1">
+                                <Grid.Resources>
+                                    <ControlTemplate x:Key="NextTemplate" TargetType="Button">
+                                        <Border x:Name="Root" BorderBrush="{ThemeResource PivotNextButtonBorderBrush}" BorderThickness="{ThemeResource PivotNavButtonBorderThemeThickness}" Background="{ThemeResource PivotNextButtonBackground}">
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup x:Name="CommonStates">
+                                                    <VisualState x:Name="Normal"/>
+                                                    <VisualState x:Name="PointerOver">
+                                                        <Storyboard>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotNextButtonBackgroundPointerOver}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="BorderBrush" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotNextButtonBorderBrushPointerOver}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground" Storyboard.TargetName="Arrow">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotNextButtonForegroundPointerOver}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                    <VisualState x:Name="Pressed">
+                                                        <Storyboard>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotNextButtonBackgroundPressed}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="BorderBrush" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotNextButtonBorderBrushPressed}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground" Storyboard.TargetName="Arrow">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotNextButtonForegroundPressed}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
+                                            <FontIcon x:Name="Arrow" Foreground="{ThemeResource PivotNextButtonForeground}" FontSize="12" FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE0E3;" HorizontalAlignment="Center" MirroredWhenRightToLeft="True" UseLayoutRounding="False" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                    <ControlTemplate x:Key="PreviousTemplate" TargetType="Button">
+                                        <Border x:Name="Root" BorderBrush="{ThemeResource PivotPreviousButtonBorderBrush}" BorderThickness="{ThemeResource PivotNavButtonBorderThemeThickness}" Background="{ThemeResource PivotPreviousButtonBackground}">
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup x:Name="CommonStates">
+                                                    <VisualState x:Name="Normal"/>
+                                                    <VisualState x:Name="PointerOver">
+                                                        <Storyboard>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPreviousButtonBackgroundPointerOver}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="BorderBrush" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPreviousButtonBorderBrushPointerOver}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground" Storyboard.TargetName="Arrow">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPreviousButtonForegroundPointerOver}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                    <VisualState x:Name="Pressed">
+                                                        <Storyboard>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPreviousButtonBackgroundPressed}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="BorderBrush" Storyboard.TargetName="Root">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPreviousButtonBorderBrushPressed}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground" Storyboard.TargetName="Arrow">
+                                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource PivotPreviousButtonForegroundPressed}"/>
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
+                                            <FontIcon x:Name="Arrow" Foreground="{ThemeResource PivotPreviousButtonForeground}" FontSize="12" FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE0E2;" HorizontalAlignment="Center" MirroredWhenRightToLeft="True" UseLayoutRounding="False" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Grid.Resources>
+                                <ScrollViewer x:Name="ScrollViewer" BringIntoViewOnFocusChange="False" HorizontalSnapPointsAlignment="Center" HorizontalSnapPointsType="MandatorySingle" HorizontalScrollBarVisibility="Hidden" Margin="{TemplateBinding Padding}" Template="{StaticResource ScrollViewerScrollBarlessTemplate}" VerticalSnapPointsType="None" VerticalScrollBarVisibility="Disabled" VerticalScrollMode="Disabled" VerticalContentAlignment="Stretch" ZoomMode="Disabled">
+                                    <PivotPanel x:Name="Panel" VerticalAlignment="Stretch">
+                                        <Grid x:Name="PivotLayoutElement">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.RenderTransform>
+                                                <CompositeTransform x:Name="PivotLayoutElementTranslateTransform"/>
+                                            </Grid.RenderTransform>
+                                            <ContentPresenter x:Name="LeftHeaderPresenter" ContentTemplate="{TemplateBinding LeftHeaderTemplate}" Content="{TemplateBinding LeftHeader}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                            <ContentControl x:Name="HeaderClipper" Grid.Column="1" HorizontalContentAlignment="Stretch" UseSystemFocusVisuals="True">
+                                                <ContentControl.Clip>
+                                                    <RectangleGeometry x:Name="HeaderClipperGeometry"/>
+                                                </ContentControl.Clip>
+                                                <Grid Background="{ThemeResource PivotHeaderBackground}">
+                                                    <Grid.RenderTransform>
+                                                        <CompositeTransform x:Name="HeaderOffsetTranslateTransform"/>
+                                                    </Grid.RenderTransform>
+                                                    <PivotHeaderPanel x:Name="StaticHeader" Visibility="Collapsed">
+                                                        <PivotHeaderPanel.RenderTransform>
+                                                            <CompositeTransform x:Name="StaticHeaderTranslateTransform"/>
+                                                        </PivotHeaderPanel.RenderTransform>
+                                                    </PivotHeaderPanel>
+                                                    <PivotHeaderPanel x:Name="Header">
+                                                        <PivotHeaderPanel.RenderTransform>
+                                                            <CompositeTransform x:Name="HeaderTranslateTransform"/>
+                                                        </PivotHeaderPanel.RenderTransform>
+                                                    </PivotHeaderPanel>
+                                                </Grid>
+                                            </ContentControl>
+                                            <Button x:Name="PreviousButton" Background="Transparent" Grid.Column="1" HorizontalAlignment="Left" Height="36" IsTabStop="False" IsEnabled="False" Margin="{ThemeResource PivotNavButtonMargin}" Opacity="0" Template="{StaticResource PreviousTemplate}" UseSystemFocusVisuals="False" VerticalAlignment="Top" Width="20"/>
+                                            <Button x:Name="NextButton" Background="Transparent" Grid.Column="1" HorizontalAlignment="Right" Height="36" IsTabStop="False" IsEnabled="False" Margin="{ThemeResource PivotNavButtonMargin}" Opacity="0" Template="{StaticResource NextTemplate}" UseSystemFocusVisuals="False" VerticalAlignment="Top" Width="20"/>
+                                            <ContentPresenter x:Name="RightHeaderPresenter" ContentTemplate="{TemplateBinding RightHeaderTemplate}" Content="{TemplateBinding RightHeader}" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                            <ItemsPresenter x:Name="PivotItemPresenter" Grid.ColumnSpan="3" Grid.Row="1">
+                                                <ItemsPresenter.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform x:Name="ItemsPresenterTranslateTransform"/>
+                                                        <CompositeTransform x:Name="ItemsPresenterCompositeTransform"/>
+                                                    </TransformGroup>
+                                                </ItemsPresenter.RenderTransform>
+                                            </ItemsPresenter>
+                                        </Grid>
+                                    </PivotPanel>
+                                </ScrollViewer>
+                            </Grid>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
     </Page.Resources>
 
-    <Page.TopAppBar>
-        <CommandBar>
-            <AppBarButton Name="ConfigButton" Icon="OpenFile" Label="Load config file" Click="ConfigButton_Click"/>
-            <AppBarButton Name="SendAllButton" Icon="Download" Label="Send all programs" Click="SendAllButton_Click">
-            </AppBarButton>
-        </CommandBar>
-    </Page.TopAppBar>
 
+            <ScrollViewer VerticalScrollBarVisibility="auto" HorizontalScrollBarVisibility="Disabled" MinWidth="1300">
+                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="20,0,20,0" Width="1300">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
 
-    <ScrollViewer VerticalScrollBarVisibility="auto" HorizontalScrollBarVisibility="Auto">
+                    <!-- 8 rows -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="20,0,20,0" Width="1077">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- 9 rows -->
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!--ROW I -->
-            <!-- Title -->
+                    <!--ROW I -->
+                    <!-- Title -->
             <TextBlock Grid.Row="0" Grid.Column="0" x:Name="pageTitle" Text="WS2016 UART Communication" Style="{StaticResource HeaderTextBlockStyle}" 
-                        IsHitTestVisible="false" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,10,0,0"></TextBlock>
+                            IsHitTestVisible="false" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,10,0,0"></TextBlock>
 
-            <!-- List of connected devices -->
-            <Button Grid.Row="0" Grid.Column="1" Content="Select device" HorizontalAlignment="Right">
-                <Button.Flyout>
-                    <Flyout x:Name="ConnectDeviceFlyout" Placement="Left">
+            <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" >
 
-                        <StackPanel Orientation="Vertical" Width="400">
-                            <ComboBox Margin="0,10,0,10" Name="SerialSockCombobox" 
-                                      SelectionChanged="SerialSockCombobox_SelectionChanged">
-                                <ComboBoxItem Name="serial" IsSelected="True">Serial port</ComboBoxItem>
-                                <ComboBoxItem Name="socket">Socket</ComboBoxItem>
+                        <Button Content="Config" Name="ConfigButton" Click="ConfigButton_Click" 
+                                Margin="10,0,10,0"/>
+
+                        <!-- List of connected devices -->
+                        <Button Content="Select device" Margin="10,0,10,0">
+                            <Button.Flyout>
+                                <Flyout x:Name="ConnectDeviceFlyout" Placement="Left">
+
+                                    <StackPanel Orientation="Vertical" Width="400">
+                                        <ComboBox Margin="0,10,0,10" Name="SerialSockCombobox" 
+                                          SelectionChanged="SerialSockCombobox_SelectionChanged">
+                                            <ComboBoxItem Name="serial" IsSelected="True">Serial port</ComboBoxItem>
+                                            <ComboBoxItem Name="socket">Socket</ComboBoxItem>
+                                        </ComboBox>
+
+                                        <StackPanel Orientation="Vertical" Name="serialStackPanel">
+                                            <ListBox x:Name="ConnectDevices" ScrollViewer.HorizontalScrollMode="Enabled" 
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Visible" 
+                                                 ItemsSource="{Binding Source={StaticResource DeviceListSource}}" 
+                                                 Width="400" Height="80" Background="Gray">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Name}" />
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                <ComboBox x:Name="baudCombox" ItemsSource="{Binding Source={StaticResource baudRateSource}}" 
+                                      Margin="10,0,10,0" SelectionChanged="baudCombox_SelectionChanged">
+                                                </ComboBox>
+                                                <Button Name="comPortInput" Content="Connect" Click="comPortInput_Click" Style="{StaticResource ButtonStyle}"/>
+                                                <Button Name="closeDevice" Content="Disconnect" Click="closeDevice_Click" Style="{StaticResource ButtonStyle}"/>
+                                                <Button Name="comPortRefresh" Click="comPortRefresh_Click" Style="{StaticResource ButtonStyle}">
+                                                    <Image Source="Assets/refresh.png" Height="20" Width="20"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Vertical" Name="socketStackPanel" Visibility="Collapsed">
+                                            <Grid Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3*"></ColumnDefinition>
+                                                    <ColumnDefinition Width="7*"></ColumnDefinition>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="auto"></RowDefinition>
+                                                    <RowDefinition Height="auto"></RowDefinition>
+                                                    <RowDefinition Height="auto"></RowDefinition>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="0"  VerticalAlignment="Center">Address:</TextBlock>
+                                                <TextBox HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="0" VerticalAlignment="Center"
+                                             Name="ipAddrTextBox" Margin="0,5,0,5"></TextBox>
+                                                <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center">Port:</TextBlock>
+                                                <TextBox Grid.Column="1" Grid.Row="1"   VerticalAlignment="Center" 
+                                             Width="100" Name="portTextBox" Margin="0,5,0,5" HorizontalAlignment="Left"></TextBox>
+                                                <Button Grid.Column="0" Grid.Row="2" Name="sockConnect" Click="sockConnect_Click" 
+                                            Content="Connect" Style="{StaticResource ButtonStyle}"/>
+                                                <Button Grid.Column="1" Grid.Row="2" Name="closeSock" Content="Disconnect"
+                                            Click="closeSock_Click" Style="{StaticResource ButtonStyle}"/>
+
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+
+                    </StackPanel>
+
+                    <!--ROW IV -->
+                    <!-- Payload header -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,10,0,0">
+                        <TextBlock Text="Payload:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    </StackPanel>
+
+                    <!--ROW V -->
+                    <!-- Payload -->
+                    <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical"
+                        Padding="50,0,50,0" Width="auto" Height="auto" HorizontalAlignment="Stretch">
+                        <TextBox Name="sendText" Width="500" Height="100" IsReadOnly="False"
+                         TextWrapping="Wrap" KeyDown="sendText_KeyDown" Text="{x:Bind ViewModel.TextToSend, Mode=TwoWay}">
+                        </TextBox>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"></ColumnDefinition>
+                                <ColumnDefinition Width="5*"></ColumnDefinition>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox x:Name="AsciiCheckBox" Content="ASCII" Checked="AsciiCheckBox_Checked" Unchecked="AsciiCheckBox_Unchecked"></CheckBox>
+                            <TextBlock Grid.Column="1" x:Name="writeFile" HorizontalAlignment="Right" Width="200"
+                                   Margin="0,0,100,0" VerticalAlignment="Center" Text="{x:Bind ViewModel.SelectedFileName, Mode=OneWay}"
+                                   ToolTipService.ToolTip="{x:Bind ViewModel.SelectedFileName, Mode=OneWay}">
+                            </TextBlock>
+                            <Button Grid.Column="2" x:Name="selectFileButton" Content="Open File" Click="selectFileButton_Click"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Send buttons -->
+                    <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Orientation="Vertical" Margin="10,0,10,0" Width="auto">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"></ColumnDefinition>
+                                <ColumnDefinition Width="auto"></ColumnDefinition>
+                                <ColumnDefinition Width="auto"></ColumnDefinition>
+                                <ColumnDefinition Width="auto"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"></RowDefinition>
+                                <RowDefinition Height="auto"></RowDefinition>
+                                <RowDefinition Height="auto"></RowDefinition>
+                                <RowDefinition Height="auto"></RowDefinition>
+                                <RowDefinition Height="auto"></RowDefinition>
+                            </Grid.RowDefinitions>
+
+
+                            <ComboBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Stretch" FontWeight="SemiBold"
+                              x:Name="commandCombox" SelectionChanged="commandCombox_SelectionChanged" Background="Gray" Width="500"
+                              ItemsSource="{Binding ViewModel.ListOfCommands}" FontFamily="Consolas"  DisplayMemberPath="Name" Margin="19,0,10,0">
                             </ComboBox>
 
-                            <StackPanel Orientation="Vertical" Name="serialStackPanel">
-                                <ListBox x:Name="ConnectDevices" ScrollViewer.HorizontalScrollMode="Enabled" 
-                                             ScrollViewer.HorizontalScrollBarVisibility="Visible" 
-                                             ItemsSource="{Binding Source={StaticResource DeviceListSource}}" 
-                                             Width="400" Height="80" Background="Gray">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" />
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
-                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                    <ComboBox x:Name="baudCombox" ItemsSource="{Binding Source={StaticResource baudRateSource}}" 
-                                  Margin="10,0,10,0" SelectionChanged="baudCombox_SelectionChanged">
-                                    </ComboBox>
-                                    <Button Name="comPortInput" Content="Connect" Click="comPortInput_Click" Style="{StaticResource ButtonStyle}"/>
-                                    <Button Name="closeDevice" Content="Disconnect" Click="closeDevice_Click" Style="{StaticResource ButtonStyle}"/>
-                                    <Button Name="comPortRefresh" Click="comPortRefresh_Click" Style="{StaticResource ButtonStyle}">
-                                        <Image Source="Assets/refresh.png" Height="20" Width="20"/>
-                                    </Button>
-                                </StackPanel>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Sender" VerticalAlignment="Bottom"
+                               FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Receiver" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Code" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Subcode" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                                <TextBox x:Name="CommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="AddressHexValidation"
+                                 Text="{Binding ElementName=commandCombox, Path=SelectedItem.MainCode}" Width="120">
+                                    <ToolTipService.Placement>Top</ToolTipService.Placement>
+                                    <ToolTipService.ToolTip>
+                                        <TextBlock Text="Main command code"/>
+                                    </ToolTipService.ToolTip>
+                                </TextBox>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" Name="socketStackPanel" Visibility="Collapsed">
-                                <Grid Width="400">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="3*"></ColumnDefinition>
-                                        <ColumnDefinition Width="7*"></ColumnDefinition>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="auto"></RowDefinition>
-                                        <RowDefinition Height="auto"></RowDefinition>
-                                        <RowDefinition Height="auto"></RowDefinition>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="0"  VerticalAlignment="Center">Address:</TextBlock>
-                                    <TextBox HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="0" VerticalAlignment="Center"
-                                         Name="ipAddrTextBox" Margin="0,5,0,5"></TextBox>
-                                    <TextBlock Margin="0,0,0,10" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center">Port:</TextBlock>
-                                    <TextBox Grid.Column="1" Grid.Row="1"   VerticalAlignment="Center" 
-                                         Width="100" Name="portTextBox" Margin="0,5,0,5" HorizontalAlignment="Left"></TextBox>
-                                    <Button Grid.Column="0" Grid.Row="2" Name="sockConnect" Click="sockConnect_Click" 
-                                        Content="Connect" Style="{StaticResource ButtonStyle}"/>
-                                    <Button Grid.Column="1" Grid.Row="2" Name="closeSock" Content="Disconnect"
-                                        Click="closeSock_Click" Style="{StaticResource ButtonStyle}"/>
-
-                                </Grid>
+                            <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                                <TextBox x:Name="SubCommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="AddressHexValidation"
+                                 Text="{Binding ElementName=commandCombox, Path=SelectedItem.SubCode}" Width="120">
+                                    <ToolTipService.Placement>Top</ToolTipService.Placement>
+                                    <ToolTipService.ToolTip>
+                                        <TextBlock Text="Sub command code"/>
+                                    </ToolTipService.ToolTip>
+                                </TextBox>
                             </StackPanel>
-                        </StackPanel>
 
-                    </Flyout>
-                </Button.Flyout>
-            </Button>
+                            <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                                <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                                <TextBox x:Name="senderAdd" TextChanged="sendrcv_TextChanged" Style="{StaticResource TextBlockStyle}" Width="65">
+                                    <ToolTipService.Placement>
+                                        <PlacementMode>Top</PlacementMode>
+                                    </ToolTipService.Placement>
+                                    <ToolTipService.ToolTip>
+                                        <TextBlock Text="Sender address"/>
+                                    </ToolTipService.ToolTip>
+                                </TextBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock FontWeight="SemiBold" >0x</TextBlock>
+                                <TextBox x:Name="receiverAdd" TextChanged="sendrcv_TextChanged" Style="{StaticResource TextBlockStyle}" Width="65">
+                                    <ToolTipService.Placement>Top</ToolTipService.Placement>
+                                    <ToolTipService.ToolTip>
+                                        <TextBlock Text="Receiver address"/>
+                                    </ToolTipService.ToolTip>
+                                </TextBox>
+                            </StackPanel>
 
-            <!--ROW IV -->
-            <!-- Payload header -->
-            <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,10,0,0">
-                <TextBlock Text="Payload:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-            </StackPanel>
+                            <!--<TextBox Grid.Column="1" Grid.Row="3" x:Name="numPacketsToSend"/>-->
 
-            <!--ROW V -->
-            <!-- Payload -->
-            <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical"
-                    Padding="50,0,50,0" Width="auto" Height="auto" HorizontalAlignment="Stretch">
-                <TextBox Name="sendText" Width="500" Height="100" IsReadOnly="False"
-                     TextWrapping="Wrap" KeyDown="sendText_KeyDown" Text="{x:Bind ViewModel.TextToSend, Mode=TwoWay}">
-                </TextBox>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition></RowDefinition>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"></ColumnDefinition>
-                        <ColumnDefinition Width="5*"></ColumnDefinition>
-                        <ColumnDefinition Width="*"></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
-                    <CheckBox x:Name="AsciiCheckBox" Content="ASCII" Checked="AsciiCheckBox_Checked" Unchecked="AsciiCheckBox_Unchecked"></CheckBox>
-                    <TextBlock Grid.Column="1" x:Name="writeFile" HorizontalAlignment="Right" Width="200"
-                               Margin="0,0,100,0" VerticalAlignment="Center" Text="{x:Bind ViewModel.SelectedFileName, Mode=OneWay}"
-                               ToolTipService.ToolTip="{x:Bind ViewModel.SelectedFileName, Mode=OneWay}">
-                    </TextBlock>
-                    <Button Grid.Column="2" x:Name="selectFileButton" Content="Open File" Click="selectFileButton_Click"/>
-                </Grid>
-            </StackPanel>
-
-            <!-- Send buttons -->
-            <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Orientation="Vertical" Margin="10,0,10,0" Width="auto">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto"></ColumnDefinition>
-                        <ColumnDefinition Width="auto"></ColumnDefinition>
-                        <ColumnDefinition Width="auto"></ColumnDefinition>
-                        <ColumnDefinition Width="auto"></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
-
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto"></RowDefinition>
-                        <RowDefinition Height="auto"></RowDefinition>
-                        <RowDefinition Height="auto"></RowDefinition>
-                        <RowDefinition Height="auto"></RowDefinition>
-                        <RowDefinition Height="auto"></RowDefinition>
-                    </Grid.RowDefinitions>
-
-
-                    <ComboBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Stretch" FontWeight="SemiBold"
-                          x:Name="commandCombox" SelectionChanged="commandCombox_SelectionChanged" Background="Gray" MaxWidth="357"
-                          ItemsSource="{Binding ViewModel.ListOfCommands}" FontFamily="Consolas"  DisplayMemberPath="Name" Margin="19,0,10,0">
-                    </ComboBox>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Sender" VerticalAlignment="Bottom"
-                           FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Receiver" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Code" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
-                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Subcode" VerticalAlignment="Bottom" FontWeight="Bold" HorizontalAlignment="Center"></TextBlock>
-
-                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
-                        <TextBlock FontWeight="SemiBold">0x</TextBlock>
-                        <TextBox x:Name="CommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="AddressHexValidation"
-                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.MainCode}" Width="120">
-                            <ToolTipService.Placement>Top</ToolTipService.Placement>
-                            <ToolTipService.ToolTip>
-                                <TextBlock Text="Main command code"/>
-                            </ToolTipService.ToolTip>
-                        </TextBox>
-                    </StackPanel>
-                    <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
-                        <TextBlock FontWeight="SemiBold">0x</TextBlock>
-                        <TextBox x:Name="SubCommandCode" Style="{StaticResource TextBlockStyle}" TextChanged="AddressHexValidation"
-                             Text="{Binding ElementName=commandCombox, Path=SelectedItem.SubCode}" Width="120">
-                            <ToolTipService.Placement>Top</ToolTipService.Placement>
-                            <ToolTipService.ToolTip>
-                                <TextBlock Text="Sub command code"/>
-                            </ToolTipService.ToolTip>
-                        </TextBox>
+                            <Button Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="10,10,10,0" HorizontalAlignment="Right"
+                            Content="Send Command" x:Name="writeTextButton" PointerEntered="writeTextButton_PointerEntered" Click="writeTextButton_Click"/>
+                        </Grid>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                        <TextBlock FontWeight="SemiBold">0x</TextBlock>
-                        <TextBox x:Name="senderAdd" TextChanged="sendrcv_TextChanged" Style="{StaticResource TextBlockStyle}" Width="65">
-                            <ToolTipService.Placement>
-                                <PlacementMode>Top</PlacementMode>
-                            </ToolTipService.Placement>
-                            <ToolTipService.ToolTip>
-                                <TextBlock Text="Sender address"/>
-                            </ToolTipService.ToolTip>
-                        </TextBox>
-                    </StackPanel>
-                    <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock FontWeight="SemiBold" >0x</TextBlock>
-                        <TextBox x:Name="receiverAdd" TextChanged="sendrcv_TextChanged" Style="{StaticResource TextBlockStyle}" Width="65">
-                            <ToolTipService.Placement>Top</ToolTipService.Placement>
-                            <ToolTipService.ToolTip>
-                                <TextBlock Text="Receiver address"/>
-                            </ToolTipService.ToolTip>
-                        </TextBox>
+                    <!--ROW VI -->
+                    <StackPanel Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center" 
+                        VerticalAlignment="Center" Orientation="Horizontal" Margin="10,10,0,0">
+                        <ComboBox Name="rxOrTx" SelectedIndex="{x:Bind ViewModel.RxOrTxOption, Mode=TwoWay}" Width="160">
+                            <ComboBoxItem>Read data:</ComboBoxItem>
+                            <ComboBoxItem>Transmit data:</ComboBoxItem>
+                        </ComboBox>
                     </StackPanel>
 
-                    <!--<TextBox Grid.Column="1" Grid.Row="3" x:Name="numPacketsToSend"/>-->
+                    <!--ROW VII -->
+                    <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Vertical" 
+                        HorizontalAlignment="Stretch" Padding="50,0,50,0">
+                        <TextBox Name="rcvdText" Width="500" Height="100" ScrollViewer.VerticalScrollBarVisibility="Auto" IsReadOnly="True" TextWrapping="Wrap"/>
+                    </StackPanel>
 
-                    <Button Grid.Column="2" Grid.Row="4" Grid.ColumnSpan="2" Margin="10,10,10,0" HorizontalAlignment="Right"
-                        Content="Send Command" x:Name="writeTextButton" PointerEntered="writeTextButton_PointerEntered" Click="writeTextButton_Click"/>
-                </Grid>
-            </StackPanel>
+                    <ScrollViewer Grid.Column="1" Grid.Row="4">
+                        <TextBlock Margin="30,0,10,0" x:Name="status" TextWrapping="Wrap" Width="300" MaxHeight="70" VerticalAlignment="Center" 
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        </TextBlock>
+                    </ScrollViewer>
 
-            <!--ROW VI -->
-            <StackPanel Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center" 
-                    VerticalAlignment="Center" Orientation="Horizontal" Margin="10,10,0,0">
-                <ComboBox Name="rxOrTx" SelectedIndex="{x:Bind ViewModel.RxOrTxOption, Mode=TwoWay}" Width="160">
-                    <ComboBoxItem>Read data:</ComboBoxItem>
-                    <ComboBoxItem>Transmit data:</ComboBoxItem>
-                </ComboBox>
-            </StackPanel>
+                    <!--ROW VIII -->
+                    <ListView x:Name="receivedPacketsView" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                      SelectionChanged="receivedPacketsView_SelectionChanged" SelectionMode="Multiple" IsMultiSelectCheckBoxEnabled="True"
+                      Background="LightGray" HorizontalContentAlignment="Stretch" Height="250" Width="1000"
+                      ItemsSource="{x:Bind pMan.receivedPackets,Mode=OneWay}" Margin="10,20,0,0"
+                       ScrollViewer.VerticalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Visible">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate xmlns:src="using:PacketManagement"  x:DataType="src:Packet">
+                                <Border Padding="3" Margin="0,5,5,5" BorderBrush="DarkGray"  CornerRadius="8,8,3,3" BorderThickness="1,3,1, 3">
+                                    <StackPanel  Orientation="Vertical" Margin="0,0,0,0" HorizontalAlignment="Stretch">
+                                        <Grid HorizontalAlignment="Stretch">
+                                            <TextBlock HorizontalAlignment="Right" Text="{x:Bind timeStamp}"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,100,0">
+                                                <TextBlock>Comando:</TextBlock>
+                                                <TextBlock TextWrapping="Wrap" Text="{x:Bind command.Name}"></TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,10,0">Payload:</TextBlock>
+                                            <TextBlock TextWrapping="Wrap"  Text="{x:Bind hexPayload}"></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,10,0">Ascii:</TextBlock>
+                                            <TextBlock TextWrapping="Wrap"  Text="{x:Bind asciiPayload}"></TextBlock>
+                                        </StackPanel>
 
-            <!--ROW VII -->
-            <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Vertical" 
-                    HorizontalAlignment="Stretch" Padding="50,0,50,0">
-                <TextBox Name="rcvdText" Width="500" Height="100" ScrollViewer.VerticalScrollBarVisibility="Auto" IsReadOnly="True" TextWrapping="Wrap"/>
-            </StackPanel>
-
-            <ScrollViewer Grid.Column="1" Grid.Row="4">
-                <TextBlock Margin="30,0,10,0" x:Name="status" TextWrapping="Wrap" Width="300" MaxHeight="70" VerticalAlignment="Center" 
-            ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
-            </TextBlock>
-               </ScrollViewer>
-
-            <!--ROW VIII -->
-            <ListView x:Name="receivedPacketsView" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
-                  SelectionChanged="receivedPacketsView_SelectionChanged" SelectionMode="Multiple" IsMultiSelectCheckBoxEnabled="True"
-                  Background="LightGray" HorizontalContentAlignment="Stretch" Height="250" Width="1000"
-                  ItemsSource="{x:Bind pMan.receivedPackets,Mode=OneWay}" Margin="10,20,0,0"
-                   ScrollViewer.VerticalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Visible">
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                    </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.ItemTemplate>
-                    <DataTemplate xmlns:src="using:PacketManagement"  x:DataType="src:Packet">
-                        <Border Padding="3" Margin="0,5,5,5" BorderBrush="DarkGray"  CornerRadius="8,8,3,3" BorderThickness="1,3,1, 3">
-                            <StackPanel  Orientation="Vertical" Margin="0,0,0,0" HorizontalAlignment="Stretch">
-                                <Grid HorizontalAlignment="Stretch">
-                                    <TextBlock HorizontalAlignment="Right" Text="{x:Bind timeStamp}"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,100,0">
-                                        <TextBlock>Comando:</TextBlock>
-                                        <TextBlock TextWrapping="Wrap" Text="{x:Bind command.Name}"></TextBlock>
                                     </StackPanel>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Margin="0,0,10,0">Payload:</TextBlock>
-                                    <TextBlock TextWrapping="Wrap"  Text="{x:Bind hexPayload}"></TextBlock>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Margin="0,0,10,0">Ascii:</TextBlock>
-                                    <TextBlock TextWrapping="Wrap"  Text="{x:Bind asciiPayload}"></TextBlock>
-                                </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
 
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+                    <!--ROW IX -->
+                    <Grid Grid.Row="6" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto"></ColumnDefinition>
+                            <ColumnDefinition Width="auto"></ColumnDefinition>
+                            <ColumnDefinition Width="auto"></ColumnDefinition>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                            <ColumnDefinition Width="auto"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" x:Name="clearListButton" Margin="10,0,10,0"
+                        Content="Clear All" Click="clearListButton_Click"></Button>
+                        <Button Grid.Column="1" x:Name="selectAllButton" Margin="0,0,10,0"
+                        HorizontalAlignment="Right" Content="Select/Unselect All" Click="selectAllButton_Click"></Button>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="50,0,0,0">
+                            <TextBlock FontWeight="SemiBold">0x</TextBlock>
+                            <TextBox x:Name="TestDateCommand" Style="{StaticResource DoubleTextBlockStyle}" Width="65">
+                                <ToolTipService.Placement>
+                                    <PlacementMode>Top</PlacementMode>
+                                </ToolTipService.Placement>
+                                <ToolTipService.ToolTip>
+                                    <TextBlock Text="Comando Data Collaudo"/>
+                                </ToolTipService.ToolTip>
+                            </TextBox>
+                            <Button Content="Invia data collaudo" Name="TestDateButton" Click="testDateButton_Click" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" />
+                            <TextBlock FontWeight="SemiBold" Margin="50,0,0,0">0x</TextBlock>
+                            <TextBox x:Name="CheckDateCommand" Style="{StaticResource DoubleTextBlockStyle}" Width="65">
+                                <ToolTipService.Placement>
+                                    <PlacementMode>Top</PlacementMode>
+                                </ToolTipService.Placement>
+                                <ToolTipService.ToolTip>
+                                    <TextBlock Text="Comando matricola"/>
+                                </ToolTipService.ToolTip>
+                            </TextBox>
+                            <Button Content="Invia matricola" Name="CheckDateButton" Click="checkDateButton_Click" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <Button Grid.Column="4" x:Name="savePacketButton" Margin="10,0,0,0"
+                        HorizontalAlignment="Right" Content="Save to file" Click="savePacketButton_Click" IsEnabled="False"></Button>
+                    </Grid>
+                </Grid>
 
-            <!--ROW IX -->
-            <Grid Grid.Row="6" Grid.ColumnSpan="2" Margin="0,10,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"></ColumnDefinition>
-                    <ColumnDefinition Width="auto"></ColumnDefinition>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
-                    <ColumnDefinition Width="auto"></ColumnDefinition>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" x:Name="clearListButton" Margin="10,0,10,0"
-                    Content="Clear All" Click="clearListButton_Click"></Button>
-                <Button Grid.Column="1" x:Name="selectAllButton" Margin="0,0,10,0"
-                    HorizontalAlignment="Right" Content="Select/Unselect All" Click="selectAllButton_Click"></Button>
-                <Button Grid.Column="3" x:Name="savePacketButton" Margin="10,0,0,0"
-                    HorizontalAlignment="Right" Content="Save to file" Click="savePacketButton_Click" IsEnabled="False"></Button>
-            </Grid>
-        </Grid>
-
-    </ScrollViewer>
+            </ScrollViewer>
 </Page>

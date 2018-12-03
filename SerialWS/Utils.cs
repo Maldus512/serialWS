@@ -18,8 +18,11 @@ namespace SerialWS
         public static string RECEIVERKEY = "receiver";
         public static string IPADDR = "ip_address";
         public static string PORT = "port";
+        public static string TESTDATECMD = "test_date_command";
+        public static string CHECKDATECMD = "check_date_command";
 
         public static int PAYLOADLEN = 2048;
+        public static int ACK = 0xF500;
     }
 
     static class Utils
@@ -220,6 +223,46 @@ namespace SerialWS
             return string.Empty;
         }
 
+        public static byte[] IntToBCD(int input) {
+            byte[] bcd;
+            int eval = input;
+            if (input > 9999 || input < 0)
+                throw new ArgumentOutOfRangeException("input");
+
+            int thousands = input / 1000;
+            int hundreds = (eval -= thousands * 1000) / 100;
+            int tens = (eval -= hundreds * 100) / 10;
+            int ones = (eval -= tens * 10);
+
+            if (input > 99) {
+                bcd = new byte[] {
+                    (byte)(thousands << 4 | hundreds),
+                    (byte)(tens << 4 | ones)
+                };
+            }
+            else {
+                bcd = new byte[] {
+                    (byte)(tens << 4 | ones)
+                };
+            }
+
+            
+
+            return bcd;
+        }
+
+
+        public static byte[] Combine(params byte[][] arrays) {
+            byte[] rv = new byte[arrays.Sum(a => a.Length)];
+            int offset = 0;
+            foreach (byte[] array in arrays) {
+                System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
+                offset += array.Length;
+            }
+            return rv;
+        }
+
     }
-      
+
+
 }

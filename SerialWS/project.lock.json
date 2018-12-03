@@ -1,7 +1,7 @@
 {
-  "version": 2,
+  "version": 3,
   "targets": {
-    "UAP,Version=v10.0": {
+    "UAP,Version=v10.0.10586": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -1885,7 +1885,7 @@
         }
       }
     },
-    "UAP,Version=v10.0/win10-arm": {
+    "UAP,Version=v10.0.10586/win10-arm": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -3626,7 +3626,7 @@
         }
       }
     },
-    "UAP,Version=v10.0/win10-arm-aot": {
+    "UAP,Version=v10.0.10586/win10-arm-aot": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -5330,7 +5330,7 @@
         }
       }
     },
-    "UAP,Version=v10.0/win10-x64": {
+    "UAP,Version=v10.0.10586/win10-x64": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -7078,7 +7078,7 @@
         }
       }
     },
-    "UAP,Version=v10.0/win10-x64-aot": {
+    "UAP,Version=v10.0.10586/win10-x64-aot": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -8782,7 +8782,7 @@
         }
       }
     },
-    "UAP,Version=v10.0/win10-x86": {
+    "UAP,Version=v10.0.10586/win10-x86": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -10530,7 +10530,7 @@
         }
       }
     },
-    "UAP,Version=v10.0/win10-x86-aot": {
+    "UAP,Version=v10.0.10586/win10-x86-aot": {
       "Microsoft.CSharp/4.0.0": {
         "type": "package",
         "dependencies": {
@@ -15483,7 +15483,7 @@
     "": [
       "Microsoft.NETCore.UniversalWindowsPlatform >= 5.0.0"
     ],
-    "UAP,Version=v10.0": []
+    "UAP,Version=v10.0.10586": []
   },
   "packageFolders": {
     "C:\\Users\\Maldus\\.nuget\\packages\\": {}
@@ -15494,13 +15494,23 @@
       "projectName": "SerialWS",
       "projectPath": "C:\\Users\\Maldus\\Projects\\serialWS\\SerialWS\\SerialWS.csproj",
       "projectJsonPath": "C:\\Users\\Maldus\\Projects\\serialWS\\SerialWS\\project.json",
-      "projectStyle": "ProjectJson"
+      "packagesPath": "C:\\Users\\Maldus\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Maldus\\Projects\\serialWS\\SerialWS\\obj\\",
+      "projectStyle": "ProjectJson",
+      "configFilePaths": [
+        "C:\\Users\\Maldus\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      }
     },
     "dependencies": {
-      "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0"
+      "Microsoft.NETCore.UniversalWindowsPlatform": "[5.0.0, )"
     },
     "frameworks": {
-      "uap10.0": {}
+      "uap10.0.10586": {}
     },
     "runtimes": {
       "win10-arm": {
